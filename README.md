@@ -1,5 +1,6 @@
 # Arqen
 
+[![Website](https://img.shields.io/badge/website-arqen.samidatools.com-b7ff18?labelColor=101214)](https://arqen.samidatools.com)
 [![Release](https://img.shields.io/github/v/release/stefansemb/Arqen?color=b7ff18&labelColor=101214)](https://github.com/stefansemb/Arqen/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-b7ff18?labelColor=101214)](LICENSE)
 [![Windows 10 and 11](https://img.shields.io/badge/Windows-10%20%7C%2011-b7ff18?labelColor=101214)](#getting-started)
@@ -7,6 +8,8 @@
 
 **A local AI assistant for Windows, with a Mission Control for agents, tasks
 and workflows.**
+
+Website: **[arqen.samidatools.com](https://arqen.samidatools.com)**
 
 Arqen is a desktop app built with PyQt6. You chat with it by text or voice,
 hand work to agents that run in the background, and give those agents exactly

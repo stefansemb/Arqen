@@ -1,5 +1,6 @@
 # Arqen
 
+[![Website](https://img.shields.io/badge/website-arqen.samidatools.com-b7ff18?labelColor=101214)](https://arqen.samidatools.com)
 [![Release](https://img.shields.io/github/v/release/stefansemb/Arqen?color=b7ff18&labelColor=101214)](https://github.com/stefansemb/Arqen/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-b7ff18?labelColor=101214)](LICENSE)
 [![Windows 10 and 11](https://img.shields.io/badge/Windows-10%20%7C%2011-b7ff18?labelColor=101214)](#kom-igång)
@@ -9,6 +10,8 @@ Arqen är en lokal AI-assistent för Windows, byggd med PyQt6, med ett
 **Kontrollrum** för agenter, uppgifter och arbetsflöden. Gränssnittet och rösten
 finns på engelska (standard) och svenska; välj under Inställningar → Språk.
 Designen är mörk med limegröna accenter.
+
+Webbplats: **[arqen.samidatools.com](https://arqen.samidatools.com)**
 
 *[English](README.md)*
 
