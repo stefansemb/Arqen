@@ -91,8 +91,85 @@ optional; a local model through Ollama or LM Studio works as the base.
 
 ## Getting started
 
-Arqen is built for **Windows** and needs **Python 3.10 or later** (developed on
-3.12).
+### What you need
+
+- A PC with **Windows 10 or 11** and about **1.5 GB** of free disk space.
+- An internet connection while installing.
+- A model for Arqen to think with, one of:
+  - an **API key** from [OpenRouter](https://openrouter.ai/keys),
+    [OpenAI](https://platform.openai.com/api-keys),
+    [Google Gemini](https://aistudio.google.com/apikey) or
+    [Anthropic](https://console.anthropic.com/settings/keys), or
+  - **[Ollama](https://ollama.com)**: free and fully local, on your own PC
+    (needs a reasonably fast computer).
+
+You don't need to install Python yourself: the installer takes care of it.
+
+### Install (5 to 10 minutes)
+
+1. Open the [latest release](https://github.com/stefansemb/Arqen/releases/latest)
+   and, under **Assets**, click **Source code (zip)**.
+2. Go to your **Downloads** folder, right-click the zip and choose
+   **Extract All…**. Choose your **Documents** folder and click **Extract**.
+   You get a folder called **Arqen-1.0.0**; this is where Arqen lives.
+3. Open that folder and double-click **`install.cmd`**.
+   - *"Windows protected your PC"*: click **More info**, then **Run anyway**.
+   - *"Do you want to run this file?"*: click **Run**.
+4. A black window opens and does the work. It asks a few questions; press
+   **Enter** to answer yes:
+   - *Install Python 3.12?* (only if you don't have it)
+   - *Install ffmpeg?* (needed for the voice; only if you don't have it)
+   - *Put a shortcut on the desktop too?*
+   - *Start Arqen now?*
+5. When it says **Arqen is installed**, press any key to close the window.
+
+### First start (2 minutes)
+
+1. Start **Arqen** from the Start menu or the desktop.
+2. Click **Settings** at the bottom left.
+3. On the **Profile** tab, pick a profile and click **APPLY PROFILE**:
+   - *Fast – OpenRouter*, *Important – OpenAI* or *Creative – Gemini* if you
+     have that API key, or
+   - *Private – Ollama* for a local model. Start Ollama first and download a
+     model once: open a terminal and run `ollama pull qwen3:8b`.
+4. On the **Provider** tab, paste your key into **API key** (not needed for
+   Ollama). Click **TEST CONNECTION**, then **SAVE**.
+5. Say hello in **Chat**. Try *"What's in my workspace?"* or
+   *"Remember that I prefer short answers."*
+
+Arqen reads and writes files only in its workspace. Choose that folder under
+**Settings → Workspace**; empty means Arqen's own folder.
+
+### Updating
+
+1. Download and extract the new release as above, into a **new** folder.
+2. Copy the **`config`** and **`data`** folders from your old Arqen folder into
+   the new one. They hold your settings, keys, chats and memory.
+3. Double-click **`install.cmd`** in the new folder. It points the shortcuts
+   at the new folder. Then delete the old folder.
+
+### Uninstalling
+
+Delete the Arqen folder and the Arqen shortcuts (Start menu and desktop).
+If the installer added Python or ffmpeg, you can remove them under Windows
+**Settings → Apps**.
+
+### If something goes wrong
+
+- **Arqen doesn't open:** look in `data\arqen.log` in the Arqen folder, or run
+  `install.cmd` again.
+- **"No supported Python was found"** and winget is missing: install
+  [Python 3.12](https://www.python.org/downloads/), tick **Add python.exe to
+  PATH**, and run `install.cmd` again.
+- **Arqen doesn't speak:** ffmpeg is missing. Open a terminal, run
+  `winget install Gyan.FFmpeg`, then sign out of Windows and back in.
+- **TEST CONNECTION fails:** check the key and that the model name exists.
+  For Ollama, check that Ollama is running and that the model is downloaded.
+
+<details>
+<summary>For developers: installing by hand, and settings files</summary>
+
+Arqen needs Python 3.10 to 3.13 (developed on 3.12).
 
 ```powershell
 git clone https://github.com/stefansemb/Arqen.git
@@ -102,21 +179,8 @@ python -m playwright install chromium
 python -m arqen.ui
 ```
 
-Then, in the app:
-
-1. Open **Settings** (bottom left) and pick a profile, or choose a provider
-   and model yourself. Paste your API key and press **TEST CONNECTION**, then
-   **SAVE**. For a fully local setup, start Ollama and choose *Private –
-   Ollama*.
-2. Under **Settings → Workspace**, choose the folder Arqen may read and write
-   files in. Empty means the application folder.
-3. Say hello in **Chat**. Try "What's in my workspace?" or
-   "remember that I prefer short answers".
-
-Good to know:
-
 - **ffmpeg** must be on your `PATH` for the voice (playback and the level
-  meter). Install it with `winget install Gyan.FFmpeg`.
+  meter): `winget install Gyan.FFmpeg`.
 - The first time you use the microphone, faster-whisper downloads its
   speech model (`small` by default). Set `ARQEN_WHISPER_MODEL`,
   `ARQEN_WHISPER_DEVICE` (`cpu` or `cuda`) or `ARQEN_WHISPER_COMPUTE_TYPE` to
@@ -124,13 +188,15 @@ Good to know:
 - Settings are saved in `config/arqen.json`; `config/arqen.example.json` shows
   the format. API keys are kept apart in `config/arqen-secrets.json`. Neither
   is ever committed.
-- Chats, memory, tasks and the tool log live in `data/`.
+- Chats, memory, tasks and the tool log live in `data/`. When Arqen runs
+  from its shortcut, its messages go to `data/arqen.log`.
 - For Google, create your own OAuth client of type *Desktop app* in Google
   Cloud Console; the connection dialog explains where. While the client is in
   testing mode, Google makes you sign in again every 7 days.
+- The core without the window starts with `python -m arqen`. Check a local
+  provider with `python -m arqen.doctor`.
 
-The core without the window starts with `python -m arqen`. Check a local
-provider with `python -m arqen.doctor`.
+</details>
 
 ## Arqen on your phone
 

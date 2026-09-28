@@ -12,6 +12,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 from urllib.parse import urlparse
 
+from arqen import __version__
 from arqen.application.service import ArqenApplication
 from arqen.config import paths
 from arqen.config.settings import load_mission_runtime_config
@@ -72,6 +73,12 @@ class ArqenRequestHandler(BaseHTTPRequestHandler):
     server: ArqenHTTPServer
     protocol_version = "HTTP/1.1"
 
+    def log_message(self, format: str, *args: Any) -> None:
+        # One line per request is noise (the phone polls every 20 seconds),
+        # and under pythonw there is no stderr to write it to: the base
+        # class's write then broke every request.
+        return
+
     def do_GET(self) -> None:
         path = urlparse(self.path).path.rstrip("/") or "/"
         try:
@@ -88,7 +95,7 @@ class ArqenRequestHandler(BaseHTTPRequestHandler):
                 self._send_html(CONTROL_PAGE)
                 return
             if path == "/api/v1/health":
-                self._send_json(HTTPStatus.OK, {"data": {"status": "ok"}})
+                self._send_json(HTTPStatus.OK, {"data": {"status": "ok", "version": __version__}})
                 return
             self._require_auth()
             if path == "/api/v1/status":

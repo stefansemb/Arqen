@@ -401,6 +401,26 @@ lokala modeller utan nativa verktyg) och dokumentationen (README, HANDOVER m.fl.
 Kod, loggar och tester är på engelska. Ny text i UI:t skrivs på engelska och
 får en svensk rad i `_SV`, i stället för att skrivas direkt i `window.py`.
 
+## Installation och release (1.0.0, 2026-09-28)
+
+`install.cmd` (dubbelklick) kör `install.ps1` med `-ExecutionPolicy Bypass`.
+Skriptet väljer Python 3.12, 3.13, 3.11 eller 3.10 (i den ordningen: 3.14
+saknar ännu stöd i alla paket), erbjuder Python 3.12 och ffmpeg via winget om
+de saknas, skapar `.venv` i mappen, installerar `requirements.txt` och
+Chromium och lägger genvägar till `pythonw -m arqen.ui` med
+`assets/arqen.ico`. Flaggor: `-Yes`, `-NoShortcuts`, `-NoLaunch`. Skripten ska
+vara ren ASCII (PowerShell 5.1 läser filer utan BOM som ANSI), och
+`.gitattributes` håller `.cmd`/`.ps1` i CRLF även i GitHubs zip. `start.cmd`
+startar utan konsol. Provat i en ren klon: installationen gick igenom och
+appen startade med `pythonw`.
+
+Utan konsol (genvägen) är `sys.stdout`/`sys.stderr` None; `arqen/ui/__main__.py`
+skickar då utdata till `data/arqen.log`. API-servern loggar inte anrop
+(`log_message`), eftersom skrivningen till en saknad stderr fick varje anrop
+från telefonen att krascha. Versionen står i `arqen/__init__.py`, visas i
+inställningsfönstrets titel och i `/api/v1/health`. Release notes i
+`CHANGELOG.md`; releasen på GitHub är taggen `v1.0.0`.
+
 ## Mobilstöd (klart 2026-09-28)
 
 Inställningar → Mobil slår på API:t i appen (`arqen/api/mobile.py`,

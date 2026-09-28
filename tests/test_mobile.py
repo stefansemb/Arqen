@@ -137,3 +137,20 @@ def test_the_phone_page_speaks_the_ui_language():
         assert '<html lang="en">' in page and '"approvals": "Approvals"' in page
     finally:
         strings.set_language("sv")
+
+
+def test_health_reports_the_version(tmp_path):
+    import threading
+
+    from arqen import __version__
+
+    server = create_server(_application(tmp_path), port=0, token="t", run_workers=False)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        _, health = request(server, "GET", "/api/v1/health", token="")
+        assert health["data"] == {"status": "ok", "version": __version__}
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)

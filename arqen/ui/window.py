@@ -72,6 +72,7 @@ from arqen.config.paths import APP_ROOT, config_dir, workspace_root
 from arqen.providers.config import ProviderConfig
 from arqen.providers.factory import create_provider
 from arqen.tools.builtins import create_builtin_registry
+from arqen import __version__
 from arqen.api import mobile
 from arqen.ui import strings
 from arqen.ui.strings import status_label, tr, tr_status
@@ -4378,7 +4379,7 @@ class ArqenWindow(QMainWindow):
     def open_settings(self) -> None:
         config = load_provider_config()
         dialog = QDialog(self)
-        dialog.setWindowTitle(tr("Arqen Settings"))
+        dialog.setWindowTitle(f"{tr('Arqen Settings')} · {__version__}")
         dialog.setMinimumSize(960, 760)
         dialog.setStyleSheet(CyberpunkGreenTheme.stylesheet())
         dialog_layout = QVBoxLayout(dialog)

@@ -88,29 +88,109 @@ inte går att ångra kräver ditt godkännande.
 
 ## Kom igång
 
-Arqen är byggt för Windows och kräver Python 3.10 eller senare (utvecklas på
-3.12).
+### Det här behöver du
+
+- En dator med **Windows 10 eller 11** och ungefär **1,5 GB** ledigt
+  diskutrymme.
+- Internetanslutning medan du installerar.
+- En modell som Arqen tänker med, något av:
+  - en **API-nyckel** från [OpenRouter](https://openrouter.ai/keys),
+    [OpenAI](https://platform.openai.com/api-keys),
+    [Google Gemini](https://aistudio.google.com/apikey) eller
+    [Anthropic](https://console.anthropic.com/settings/keys), eller
+  - **[Ollama](https://ollama.com)**: gratis och helt lokalt på din egen
+    dator (kräver en hyfsat snabb dator).
+
+Du behöver inte installera Python själv: installationsprogrammet sköter det.
+
+### Installera (5 till 10 minuter)
+
+1. Öppna [senaste versionen](https://github.com/stefansemb/Arqen/releases/latest)
+   och klicka på **Source code (zip)** under **Assets**.
+2. Gå till mappen **Hämtade filer**, högerklicka på zip-filen och välj
+   **Extrahera alla…**. Välj mappen **Dokument** och klicka på **Extrahera**.
+   Du får en mapp som heter **Arqen-1.0.0**; där bor Arqen.
+3. Öppna den mappen och dubbelklicka på **`install.cmd`**.
+   - *"Datorn skyddades av Windows"*: klicka på **Mer information** och sedan
+     **Kör ändå**.
+   - *"Vill du köra den här filen?"*: klicka på **Kör**.
+4. Ett svart fönster öppnas och gör jobbet. Det ställer några frågor på
+   engelska; tryck **Enter** för att svara ja:
+   - *Install Python 3.12?* (bara om du saknar det)
+   - *Install ffmpeg?* (behövs för rösten; bara om du saknar det)
+   - *Put a shortcut on the desktop too?* (genväg på skrivbordet)
+   - *Start Arqen now?* (starta Arqen nu)
+5. När det står **Arqen is installed**, tryck på valfri tangent för att stänga
+   fönstret.
+
+### Första starten (2 minuter)
+
+1. Starta **Arqen** från Start-menyn eller skrivbordet.
+2. Arqen startar på engelska. Klicka på **Settings** nere till vänster, välj
+   fliken **Language**, välj **Svenska**, klicka på **SAVE** och sedan **Yes**
+   när Arqen frågar om omstart. Öppna sedan **Inställningar** igen.
+3. Välj en profil på fliken **Profil** och klicka på **TILLÄMPA PROFIL**:
+   - *Snabb – OpenRouter*, *Viktigt – OpenAI* eller *Kreativt – Gemini* om du
+     har den nyckeln, eller
+   - *Privat – Ollama* för en lokal modell. Starta Ollama först och ladda ner
+     en modell en gång: öppna en terminal och kör `ollama pull qwen3:8b`.
+4. Klistra in nyckeln i **API-nyckel** på fliken **Leverantör** (behövs inte
+   för Ollama). Klicka på **TESTA ANSLUTNING** och sedan **SPARA**.
+5. Säg hej i **Chatt**. Prova *"Vad finns i min arbetsyta?"* eller
+   *"Kom ihåg att jag vill ha korta svar."*
+
+Arqen läser och skriver filer bara i sin arbetsyta. Välj mappen under
+**Inställningar → Arbetsyta**; tomt betyder Arqens egen mapp.
+
+### Uppdatera
+
+1. Ladda ner och packa upp den nya versionen som ovan, i en **ny** mapp.
+2. Kopiera mapparna **`config`** och **`data`** från den gamla Arqen-mappen
+   till den nya. Där ligger dina inställningar, nycklar, chattar och minnen.
+3. Dubbelklicka på **`install.cmd`** i den nya mappen. Genvägarna pekas då om
+   till den. Ta sedan bort den gamla mappen.
+
+### Avinstallera
+
+Ta bort Arqen-mappen och Arqen-genvägarna (Start-menyn och skrivbordet). Om
+installationen lade till Python eller ffmpeg kan du ta bort dem under
+Windows **Inställningar → Appar**.
+
+### Om något går fel
+
+- **Arqen öppnas inte:** titta i `data\arqen.log` i Arqen-mappen, eller kör
+  `install.cmd` igen.
+- **"No supported Python was found"** och winget saknas: installera
+  [Python 3.12](https://www.python.org/downloads/), kryssa i **Add python.exe
+  to PATH** och kör `install.cmd` igen.
+- **Arqen pratar inte:** ffmpeg saknas. Öppna en terminal, kör
+  `winget install Gyan.FFmpeg`, logga sedan ut ur Windows och in igen.
+- **TESTA ANSLUTNING misslyckas:** kontrollera nyckeln och att modellnamnet
+  finns. För Ollama: kontrollera att Ollama körs och att modellen är
+  nedladdad.
+
+<details>
+<summary>För utvecklare: installera för hand</summary>
+
+Arqen kräver Python 3.10 till 3.13 (utvecklas på 3.12).
 
 ```powershell
+git clone https://github.com/stefansemb/Arqen.git
+cd Arqen
 python -m pip install -r requirements.txt
 python -m playwright install chromium
 python -m arqen.ui
 ```
 
-- **ffmpeg** behöver finnas i `PATH` för rösten (ljudnivå och uppspelning):
-  `winget install Gyan.FFmpeg`.
-- Vill du att engelsk text läses med en lokal engelsk röst när Arqen talar
-  svenska, installera Kokoro (drar in PyTorch, en stor nedladdning):
-  `python -m pip install "kokoro>=0.9.4" "soundfile>=0.12,<1"`.
-- Kopiera `config/arqen.example.json` till `config/arqen.json`, eller välj en
-  profil under Inställningar i appen.
-- API-nycklar sparas separat i `config/arqen-secrets.json`, som aldrig checkas
-  in. Ange dem under Inställningar.
-- Arbetsytan, mappen där Arqen läser och skriver filer, väljs under
-  Inställningar → Arbetsyta.
+- **ffmpeg** behöver finnas i `PATH` för rösten: `winget install Gyan.FFmpeg`.
+- Inställningar sparas i `config/arqen.json` (`config/arqen.example.json` visar
+  formatet) och nycklar i `config/arqen-secrets.json`. Ingen av dem checkas in.
+- Chattar, minne, uppgifter och verktygsloggen ligger i `data/`; körs Arqen
+  från genvägen hamnar dess meddelanden i `data/arqen.log`.
+- Kärnan utan fönster startas med `python -m arqen`. Kontrollera en lokal
+  provider med `python -m arqen.doctor`.
 
-Kärnan utan gränssnitt startas med `python -m arqen`. Kontrollera en lokal
-provider med `python -m arqen.doctor`.
+</details>
 
 ## Arqen i telefonen
 
