@@ -7,6 +7,10 @@ Designen är mörk med limegröna accenter.
 
 *[English](README.md)*
 
+![Arqen: en chatt, med en agents Telegram-inlägg som väntar på godkännande överst](docs/images/chat.png)
+
+*Skärmbilderna visar demodata och det engelska gränssnittet.*
+
 Arqen är byggt för att vara lokalt, kontrollerbart och utbyggbart. Molnmodeller
 är valfria; lokal körning via Ollama eller LM Studio fungerar som grund. Allt som
 inte går att ångra kräver ditt godkännande.
@@ -27,6 +31,8 @@ inte går att ångra kräver ditt godkännande.
 
 **Kontrollrum**
 
+![Agenterna i Kontrollrummet](docs/images/agents.png)
+
 - Uppgifter, arbetsflöden med flera agenter, scheman och aktivitetslogg.
 - Agenter med egna verktygsregler. Varje uppgift körs i en egen, fristående
   Arqen, så en agents begränsningar aldrig påverkar chatten.
@@ -45,6 +51,8 @@ inte går att ångra kräver ditt godkännande.
 
 **Verktyg och säkerhet**
 
+![Tool Gatewayens katalog, med webbverktygen utfällda](docs/images/tools.png)
+
 - Verktyg för system, fönster och program, filer i arbetsytan, dokument (PDF,
   Word, Excel), webben, en egen webbläsare, väder, röst och bildgenerering.
 - Godkännande krävs för att skriva, ta bort, flytta eller ångra filer, skapa
@@ -54,6 +62,8 @@ inte går att ångra kräver ditt godkännande.
 - Minnen som ser ut som lösenord eller nycklar sparas aldrig.
 
 **Anslutningar**
+
+![Anslutningar: ge en agent tillgång till paket av verktyg](docs/images/connections.png)
 
 - Ge en agent tillgång till paket av verktyg med ett klick per kort.
 - **GitHub** (personlig token): repon, issues och pull requests; att skapa en
@@ -106,6 +116,8 @@ provider med `python -m arqen.doctor`.
 
 Chatta med Arqen, godkänn verktyg och Kontrollrummets godkännanden och följ
 dina uppgifter i telefonens webbläsare, medan Arqen körs på datorn.
+
+![Arqen i telefonen: ett verktyg som väntar på godkännande, Kontrollrummets godkännanden och en uppgifts resultat](docs/images/phone.png)
 
 1. Installera [Tailscale](https://tailscale.com) på datorn och telefonen och
    logga in med samma konto. Då når bara enheter i ditt eget tailnet Arqen;

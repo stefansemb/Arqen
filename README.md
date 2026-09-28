@@ -14,7 +14,9 @@ optional; a local model through Ollama or LM Studio works as the base.
 *[Svenska](README.sv.md)* · The interface speaks English or Swedish
 (Settings → Language).
 
-![Connections: give an agent access to packages of tools](docs/images/connections.png)
+![Arqen: a chat, with an agent's Telegram post waiting for approval at the top](docs/images/chat.png)
+
+*Screenshots show demo data.*
 
 ## Features
 
@@ -30,6 +32,8 @@ optional; a local model through Ollama or LM Studio works as the base.
   total. The cost is the provider's own figure, not an estimate.
 
 **Mission Control**
+
+![Agents in Mission Control](docs/images/agents.png)
 
 - Tasks, multi-agent workflows, schedules (daily, weekly, monthly or once) and
   an activity log.
@@ -60,9 +64,11 @@ optional; a local model through Ollama or LM Studio works as the base.
 - API keys are read only when a tool runs and are scrubbed from everything a
   tool returns. Memories that look like passwords or keys are never stored.
 
-![The Tool Gateway catalogue](docs/images/tools.png)
+![The Tool Gateway catalogue, with the web tools open](docs/images/tools.png)
 
 **Connections**
+
+![Connections: give an agent access to packages of tools](docs/images/connections.png)
 
 - **GitHub** (personal token): repos, issues and pull requests; creating an
   issue needs approval.
@@ -130,6 +136,8 @@ provider with `python -m arqen.doctor`.
 
 Chat with Arqen, approve its tools and Mission Control's approvals, and follow
 your tasks from your phone's browser, while Arqen runs on your computer.
+
+![Arqen on a phone: a tool waiting for approval, Mission Control's approvals and a task's result](docs/images/phone.png)
 
 1. Install [Tailscale](https://tailscale.com) on the computer and the phone
    and sign in to the same account. Only devices in your own tailnet can then

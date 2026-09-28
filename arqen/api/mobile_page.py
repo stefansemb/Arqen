@@ -180,7 +180,16 @@ let badgeTimer = 0;
 
 const fmt = (text, values) => text.replace(/\{(\w+)\}/g, (m, k) => values[k] ?? m);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
-const rich = s => esc(s).replace(/`([^`\n]+)`/g, '<code>$1</code>').replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>');
+// Enough Markdown for replies and results: headings, bullets, bold and code.
+const rich = s => esc(s)
+  .replace(/^#{1,6}\s+(.+)$/gm, '<b>$1</b>')
+  .replace(/^\s*[-*]\s+/gm, '• ')
+  .replace(/`([^`\n]+)`/g, '<code>$1</code>')
+  .replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>');
+// A tool's arguments as the person reads them: one per line, text with its
+// own line breaks rather than JSON escapes, cut short when very long.
+const args = value => Object.entries(value || {}).map(([key, item]) =>
+  key + ': ' + (typeof item === 'string' ? item : JSON.stringify(item))).join('\n').slice(0, 4000);
 const untitled = t => !t || t === 'New chat' || t === 'Ny chatt';
 const when = iso => { try { return new Date(iso).toLocaleString([], {dateStyle: 'short', timeStyle: 'short'}); } catch { return ''; } };
 
@@ -292,7 +301,7 @@ function confirmation(pending) {
   const card = document.createElement('div');
   card.className = 'card';
   card.innerHTML = `<div class="what">${esc(fmt(T.wantsToRun, {tool: pending.tool}))}</div>
-    <pre>${esc(JSON.stringify(pending.arguments, null, 2)).slice(0, 4000)}</pre>
+    <pre>${esc(args(pending.arguments))}</pre>
     <div class="actions"><button class="ghost" data-approve="false">${esc(T.reject)}</button>
     <button class="primary" data-approve="true">${esc(T.approve)}</button></div>`;
   card.querySelectorAll('button').forEach(button => button.onclick = async () => {
@@ -345,7 +354,7 @@ async function showApprovals() {
     if (!pending.length) { view.innerHTML = `<div class="empty">${esc(T.nothingWaiting)}</div>`; return; }
     view.innerHTML = pending.map(a => `<div class="card" data-id="${esc(a.id)}">
       <div class="meta status pending">${esc(T.task)}: ${esc(titles[a.task_id] || a.task_id.slice(0, 8))}</div>
-      <div class="what">${esc(a.action)}</div><pre>${esc(JSON.stringify(a.payload, null, 2)).slice(0, 4000)}</pre>
+      <div class="what">${esc(a.action)}</div><pre>${esc(args(a.payload))}</pre>
       <div class="actions"><button class="ghost" data-status="rejected">${esc(T.reject)}</button>
       <button class="primary" data-status="approved">${esc(T.approve)}</button></div></div>`).join('');
     view.querySelectorAll('.card').forEach(card => card.querySelectorAll('button').forEach(button => button.onclick = async () => {
