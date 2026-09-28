@@ -247,8 +247,8 @@ def _test(credentials: dict[str, str]) -> str:
 CONNECTOR = Connector(
     id="google",
     name="Google",
-    category="Produktivitet",
-    description="Läsa Gmail, Kalender och Drive. Mejlutkast och kalenderhändelser skapas med godkännande; inget skickas.",
+    category="Productivity",
+    description="Read Gmail, Calendar and Drive. Mail drafts and calendar events are created with approval; nothing is sent.",
     tools=("gmail_search_messages", "gmail_read_message", "gmail_create_draft",
            "calendar_list_events", "calendar_create_event",
            "drive_search_files", "drive_read_file"),
@@ -257,12 +257,12 @@ CONNECTOR = Connector(
     icon="Go",
     fields=(
         CredentialField(
-            "client_id", "Klient-ID", secret=False,
+            "client_id", "Client ID", secret=False,
             placeholder="…apps.googleusercontent.com",
-            help="Google Cloud Console → API:er och tjänster → Inloggningsuppgifter → "
-                 "Skapa OAuth-klient-ID av typen Datorapp (Desktop app).",
+            help="Google Cloud Console → APIs & Services → Credentials → "
+                 "Create an OAuth client ID of type Desktop app.",
         ),
-        CredentialField("client_secret", "Klienthemlighet", placeholder="GOCSPX-…"),
+        CredentialField("client_secret", "Client secret", placeholder="GOCSPX-…"),
     ),
     issued=("refresh_token",),
     test=_test,

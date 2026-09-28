@@ -27,18 +27,18 @@ def _test(credentials: dict[str, str]) -> str:
 CONNECTOR = Connector(
     id="github",
     name="GitHub",
-    category="Utveckling",
-    description="Repon, issues och pull requests. Att skapa issues kräver godkännande.",
+    category="Development",
+    description="Repos, issues and pull requests. Creating issues requires approval.",
     tools=("github_list_repos", "github_list_issues", "github_read_issue",
            "github_list_pull_requests", "github_create_issue"),
     auth="token",
     builtin=False,
     icon="G",
     fields=(CredentialField(
-        "token", "Personlig token",
+        "token", "Personal token",
         placeholder="github_pat_…",
-        help="Skapa en fine-grained token under GitHub → Settings → Developer settings. "
-             "Ge bara läsrätt till repon och issues, plus skrivrätt till issues om agenter ska kunna skapa dem.",
+        help="Create a fine-grained token under GitHub → Settings → Developer settings. "
+             "Give read access to repos and issues only, plus write access to issues if agents should be able to create them.",
     ),),
     test=_test,
     help_url="https://github.com/settings/personal-access-tokens",

@@ -310,7 +310,7 @@ Faser:
 
 ## Teststatus
 
-230 tester, alla gröna. Kör efter ändringar:
+236 tester, alla gröna. Kör efter ändringar:
 
 ```powershell
 python -m compileall -q arqen
@@ -361,9 +361,24 @@ svaret (tid, tokens, kostnad) och totalen som en rad under.
 
 ## Språk
 
-Hela gränssnittet är på svenska, i linje med röst och chatt. Alla texter går via
+Gränssnittet finns på svenska (standard) och engelska. Språket väljs i
+Inställningar → Språk, sparas i `arqen.json` (`"language": "sv"` / `"en"`) och
+sätts med `set_language` i `arqen/ui/__main__.py` innan fönstret byggs. Byte
+kräver omstart; Arqen erbjuder att starta om direkt. Alla texter går via
 `tr()` i `arqen/ui/strings.py`: koden behåller engelska källsträngar som nycklar
-och tabellen ger den svenska texten. Status för tasks och events sparas på
+och tabellen ger den svenska texten, så engelska behöver ingen tabell. Vid
+antal 1 används singularformer ur `_ONE` ("1 uppgift", "1 tool").
+Verktygskatalogen (`tool_catalog.py`) har namn och sammanfattning på båda
+språken sida vid sida; kategorierna är engelska nycklar som visas via `tr()`.
+Anslutningarnas texter (`arqen/connectors/`) är engelska och översätts när de
+visas.
+
+Kvar för en helt engelsk Arqen (steg 2): motorn (`engine.py`: systemprompten
+säger "Answer in Swedish", sammanfattningsprompter och fasta svar som
+"kom ihåg att …"), rösten (`sv-SE-MattiasNeural`, Whisper-prompten i
+`microphone.py`), reflektionsprompten, felmeddelanden i `arqen/mission/`,
+vädret och mobil-API:ts sidor. Ordmatchningen i minnet och verktygsvalet är
+byggd för svenska böjningar och behöver engelska vid sidan av. Status för tasks och events sparas på
 engelska i databasen och översätts först när de visas (`status_label`), så
 lagring, tester och logik är språkneutrala. Kod, loggar och tester är på
 engelska. Ny text i UI:t ska läggas in i tabellen i stället för att skrivas

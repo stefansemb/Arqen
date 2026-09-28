@@ -17,6 +17,7 @@ from arqen.connectors.base import Connector, CredentialField
 from arqen.connectors.mcp_client import McpToolSpec, with_session
 from arqen.connectors.store import load_credentials
 from arqen.tools.base import Tool
+from arqen.ui.strings import tr
 
 _PREFIX = "mcp_"
 _TITLES: dict[str, str] = {}
@@ -129,7 +130,7 @@ def mcp_connectors() -> list[Connector]:
             id=connector_id(server),
             name=str(server.get("name") or server["id"]),
             category="MCP",
-            description=f"MCP-server: {where}",
+            description=tr("MCP server: {where}", where=where),
             tools=tools,
             auth="mcp",
             builtin=False,
@@ -140,7 +141,7 @@ def mcp_connectors() -> list[Connector]:
     return connectors
 
 
-TOKEN_FIELD = CredentialField("token", "Token (valfri)", placeholder="Bearer-token om servern kräver det")
+TOKEN_FIELD = CredentialField("token", "Token (optional)", placeholder="Bearer token if the server requires one")
 
 
 def server_token(server: dict) -> str:

@@ -131,6 +131,7 @@ def save_workspace_root(root: Path | str, path: Path | None = None) -> Path:
             data = {}
     data["workspace"] = "" if applied == APP_ROOT else str(applied)
     config_path.write_text(json.dumps(data, indent=2) + '\n', encoding="utf-8")
+    return applied
 
 
 def load_mission_runtime_config(path: Path | None = None) -> dict:
@@ -144,4 +145,27 @@ def load_mission_runtime_config(path: Path | None = None) -> dict:
         return {}
     mission = data.get("mission", {})
     return dict(mission) if isinstance(mission, dict) else {}
-    return applied
+
+
+def load_language(path: Path | None = None) -> str:
+    """The saved UI language code, or "" when none has been chosen."""
+    config_path = path or config_dir() / "arqen.json"
+    try:
+        data = json.loads(config_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return ""
+    return str(data.get("language", "")).strip()
+
+
+def save_language(code: str, path: Path | None = None) -> None:
+    """Store the UI language; it takes effect at the next start."""
+    config_path = path or config_dir() / "arqen.json"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    data: dict = {}
+    if config_path.exists():
+        try:
+            data = json.loads(config_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            data = {}
+    data["language"] = code
+    config_path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")

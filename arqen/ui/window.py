@@ -30,7 +30,7 @@ from PyQt6.QtWidgets import (
     QFileDialog,
     QDialogButtonBox,
 )
-from PyQt6.QtCore import QEvent, QObject, QSettings, QThread, QTimer, Qt, QUrl, QPoint, QPointF, QRectF, QSize, pyqtSignal, pyqtSlot
+from PyQt6.QtCore import QEvent, QObject, QProcess, QSettings, QThread, QTimer, Qt, QUrl, QPoint, QPointF, QRectF, QSize, pyqtSignal, pyqtSlot
 from PyQt6.QtGui import (
     QBrush,
     QColor,
@@ -49,6 +49,7 @@ import html
 from dataclasses import replace as replace_dataclass
 import math
 import re
+import sys
 import threading
 from types import SimpleNamespace
 import time
@@ -62,12 +63,14 @@ from arqen.config.settings import (
     load_api_key,
     load_workspace_root,
     save_workspace_root,
+    save_language,
 )
 from arqen.config import paths
 from arqen.config.paths import APP_ROOT, config_dir, workspace_root
 from arqen.providers.config import ProviderConfig
 from arqen.providers.factory import create_provider
 from arqen.tools.builtins import create_builtin_registry
+from arqen.ui import strings
 from arqen.ui.strings import status_label, tr, tr_status
 from arqen.ui.tool_catalog import CATEGORIES, ToolInfo, tool_info
 from arqen.connectors import GrantState, all_connectors, grant_state, with_connector, without_connector
@@ -1497,7 +1500,7 @@ class ArqenWindow(QMainWindow):
             info = tool_info(item["name"], item["description"])
             if approval_only and not item["requires_confirmation"]:
                 continue
-            haystack = " ".join((item["name"], info.title, info.summary, info.category)).casefold()
+            haystack = " ".join((item["name"], info.title, info.summary, tr(info.category))).casefold()
             if query and query not in haystack:
                 continue
             sections.setdefault(info.category, []).append((item, info))
@@ -1550,7 +1553,7 @@ class ArqenWindow(QMainWindow):
         arrow.setFixedWidth(14)
         arrow.setStyleSheet("color: #b7ff18; font-size: 14px; border: none;")
         row.addWidget(arrow)
-        name = QLabel(category.upper())
+        name = QLabel(tr(category).upper())
         name.setStyleSheet("color: #f2f0eb; font-weight: bold; font-size: 13px; letter-spacing: 1px; border: none;")
         row.addWidget(name)
         count = QLabel(tr("{count} tools", count=len(entries)))
@@ -1991,7 +1994,7 @@ class ArqenWindow(QMainWindow):
         shown = [
             connector for connector in connectors
             if not query or query in " ".join(
-                (connector.name, connector.description, *(tool_info(tool).title for tool in connector.tools))
+                (connector.name, tr(connector.description), *(tool_info(tool).title for tool in connector.tools))
             ).casefold()
         ]
         if not shown:
@@ -2059,7 +2062,7 @@ class ArqenWindow(QMainWindow):
                 manage.clicked.connect(lambda _, item=connector: self._open_connector_dialog(item))
             card_layout.addWidget(manage, alignment=Qt.AlignmentFlag.AlignLeft)
 
-        description = QLabel(connector.description)
+        description = QLabel(tr(connector.description))
         description.setWordWrap(True)
         description.setStyleSheet("color: #c4cec9; font-size: 11px;")
         card_layout.addWidget(description)
@@ -2101,7 +2104,7 @@ class ArqenWindow(QMainWindow):
         dialog.setWindowTitle(tr("{name} – connection", name=connector.name))
         dialog.setMinimumWidth(520)
         layout = QVBoxLayout(dialog)
-        intro = QLabel(connector.description)
+        intro = QLabel(tr(connector.description))
         intro.setWordWrap(True)
         layout.addWidget(intro)
         form = QFormLayout()
@@ -2110,7 +2113,7 @@ class ArqenWindow(QMainWindow):
         lookups: list[tuple[QPushButton, object]] = []
         for item in connector.fields:
             field_input = QLineEdit(saved.get(item.name, ""))
-            field_input.setPlaceholderText(item.placeholder)
+            field_input.setPlaceholderText(tr(item.placeholder))
             if item.secret:
                 field_input.setEchoMode(QLineEdit.EchoMode.Password)
             if item.lookup is not None:
@@ -2120,12 +2123,12 @@ class ArqenWindow(QMainWindow):
                 self._style_page_action(lookup_button)
                 lookup_button.setAutoDefault(False)
                 row.addWidget(lookup_button)
-                form.addRow(item.label, row)
+                form.addRow(tr(item.label), row)
                 lookups.append((lookup_button, item))
             else:
-                form.addRow(item.label, field_input)
+                form.addRow(tr(item.label), field_input)
             if item.help:
-                hint = QLabel(item.help)
+                hint = QLabel(tr(item.help))
                 hint.setWordWrap(True)
                 hint.setStyleSheet("color: #8d969d; font-size: 11px;")
                 form.addRow("", hint)
@@ -4376,13 +4379,15 @@ class ArqenWindow(QMainWindow):
         profile_tab = QWidget()
         provider_tab = QWidget()
         workspace_tab = QWidget()
+        language_tab = QWidget()
         fallback_tab = QWidget()
         stats_tab = QWidget()
         profile_form = QFormLayout(profile_tab)
         provider_form = QFormLayout(provider_tab)
         workspace_form = QFormLayout(workspace_tab)
+        language_form = QFormLayout(language_tab)
         fallback_form = QFormLayout(fallback_tab)
-        for tab_form in (profile_form, provider_form, workspace_form, fallback_form):
+        for tab_form in (profile_form, provider_form, workspace_form, language_form, fallback_form):
             tab_form.setContentsMargins(10, 12, 10, 12)
             tab_form.setHorizontalSpacing(18)
             tab_form.setVerticalSpacing(12)
@@ -4391,6 +4396,7 @@ class ArqenWindow(QMainWindow):
         tabs.addTab(profile_tab, tr("Profile"))
         tabs.addTab(provider_tab, tr("Provider"))
         tabs.addTab(workspace_tab, tr("Workspace"))
+        tabs.addTab(language_tab, tr("Language"))
         tabs.addTab(fallback_tab, tr("Fallback"))
         tabs.addTab(stats_tab, tr("Statistics"))
         dialog_layout.addWidget(tabs, 1)
@@ -4508,6 +4514,15 @@ class ArqenWindow(QMainWindow):
         workspace_hint.setWordWrap(True)
         workspace_form.addRow(tr("About"), workspace_hint)
 
+        language = QComboBox()
+        for code, name in strings.LANGUAGES.items():
+            language.addItem(name, code)
+        language.setCurrentIndex(max(0, language.findData(strings.LANGUAGE)))
+        language_form.addRow(tr("Language"), language)
+        language_hint = QLabel(tr("Arqen's language: menus, buttons and texts. Takes effect when Arqen restarts."))
+        language_hint.setWordWrap(True)
+        language_form.addRow(tr("About"), language_hint)
+
         refresh_models = QPushButton(tr("FETCH MODELS"))
         refresh_models.setObjectName("secondaryButton")
         refresh_models.clicked.connect(lambda: self.load_local_models(model, base_url.text(), api_key.text(), provider.currentData()))
@@ -4536,6 +4551,7 @@ class ArqenWindow(QMainWindow):
                 fallback_timeout.text(),
                 profile.currentData(),
                 workspace.text(),
+                language.currentData(),
             )
         )
         actions_layout.addWidget(save)
@@ -4627,7 +4643,7 @@ class ArqenWindow(QMainWindow):
         if chosen:
             field.setText(str(Path(chosen)))
 
-    def save_settings(self, dialog: QDialog, name: str, model: str, base_url: str, timeout: str, api_key: str, fallback_enabled: bool = False, fallback_provider: str = "", fallback_timeout: str = str(ProviderConfig().fallback_timeout), profile_name: str = "", workspace: str = "") -> None:
+    def save_settings(self, dialog: QDialog, name: str, model: str, base_url: str, timeout: str, api_key: str, fallback_enabled: bool = False, fallback_provider: str = "", fallback_timeout: str = str(ProviderConfig().fallback_timeout), profile_name: str = "", workspace: str = "", language: str = "") -> None:
         try:
             config = ProviderConfig(
                 name=name,
@@ -4650,8 +4666,25 @@ class ArqenWindow(QMainWindow):
             self.profile_name = profile_name
             self.set_status(self.provider_status(tr("READY // PROVIDER UPDATED")))
             dialog.accept()
+            if language and language != strings.LANGUAGE:
+                save_language(language)
+                self._offer_restart_for_language()
         except (ValueError, TypeError) as exc:
             QMessageBox.warning(dialog, tr("Invalid settings"), str(exc))
+
+    def _offer_restart_for_language(self) -> None:
+        # The UI builds its texts once, so a new language needs a fresh start.
+        answer = QMessageBox.question(
+            self,
+            tr("Restart to change language"),
+            tr("The language changes when Arqen restarts. Restart now?"),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+        if self.close():
+            QProcess.startDetached(sys.executable, ["-m", "arqen.ui"], str(APP_ROOT))
+            QApplication.instance().quit()
 
     @staticmethod
     def filter_model_choices(model_box: QComboBox, query: str) -> None:

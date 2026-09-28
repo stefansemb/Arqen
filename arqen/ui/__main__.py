@@ -3,16 +3,18 @@ import sys
 from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import QApplication
 
-from arqen.config.settings import load_provider_config, load_workspace_root
+from arqen.config.settings import load_language, load_provider_config, load_workspace_root
 from arqen.core.engine import ConversationEngine
 from arqen.core.chat_tools import apply_chat_tool_limits
 from arqen.providers.factory import create_provider
 from arqen.tools.builtins import create_builtin_registry
+from arqen.ui.strings import set_language
 from arqen.ui.window import ArqenWindow
 
 
 def main() -> None:
     load_workspace_root()
+    set_language(load_language())
     config = load_provider_config()
     engine = ConversationEngine(
         provider=create_provider(config),

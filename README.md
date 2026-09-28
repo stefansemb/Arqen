@@ -124,9 +124,10 @@ python -m pytest -q
 - `tests/conftest.py` pekar om arbetsytan och datakatalogen till en tillfällig
   mapp, så att tester aldrig rör dina chattar, minnen eller uppgifter. Ta inte
   bort den.
-- All text i gränssnittet går via `tr()` i `arqen/ui/strings.py`; ny text läggs
-  in där, inte direkt i `window.py`.
-- Nya verktyg behöver ett svenskt namn och en kategori i
+- All text i gränssnittet går via `tr()` i `arqen/ui/strings.py`: skriv den på
+  engelska i koden och lägg den svenska översättningen i tabellen där, inte
+  direkt i `window.py`. Språket väljs i Inställningar → Språk.
+- Nya verktyg behöver en kategori och ett namn på engelska och svenska i
   `arqen/ui/tool_catalog.py`; ett test kontrollerar det.
 
 ## Dokument

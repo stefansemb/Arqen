@@ -57,9 +57,9 @@ def test_sections_start_folded_and_open_on_click(window):
     view = window()
     sections, cards = _shown(view)
     assert sections >= 8 and cards == 0
-    view._toggle_tool_section("Webb")
+    view._toggle_tool_section("Web")
     assert _shown(view)[1] == 6
-    view._toggle_tool_section("Webb")
+    view._toggle_tool_section("Web")
     assert _shown(view)[1] == 0
 
 
@@ -68,7 +68,7 @@ def test_a_search_opens_the_sections_it_matches(window):
     view = window()
     view.tools_search.setText("pdf")
     assert _shown(view) == (1, 1)
-    view._toggle_tool_section("Dokument")  # can still be folded by hand
+    view._toggle_tool_section("Documents")  # can still be folded by hand
     assert _shown(view) == (1, 0)
     view.tools_search.setText("")
     assert _shown(view)[1] == 0  # back to the sections the user had open

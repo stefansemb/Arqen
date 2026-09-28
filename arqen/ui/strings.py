@@ -3,12 +3,26 @@
 The code keeps English source strings as keys, so logic, tests and stored
 data stay language-neutral.  ``tr`` looks up the Swedish text; a string with
 no entry is shown as it is, which keeps model names, file names and user
-data untouched.  To change language, change ``LANGUAGE`` or the table.
+data untouched.  English is the source language, so it needs no table.
+
+The language is chosen in Settings and stored in ``arqen.json``; it is set
+with ``set_language`` once at startup, before any window is built.
 """
 
 from __future__ import annotations
 
-LANGUAGE = "sv"
+# The languages the UI can show, by code, each named in its own language.
+LANGUAGES = {"sv": "Svenska", "en": "English"}
+DEFAULT_LANGUAGE = "sv"
+LANGUAGE = DEFAULT_LANGUAGE
+
+
+def set_language(code: str) -> str:
+    """Use ``code`` for all UI text from now on; an unknown code means the default."""
+    global LANGUAGE
+    LANGUAGE = code if code in LANGUAGES else DEFAULT_LANGUAGE
+    return LANGUAGE
+
 
 _SV: dict[str, str] = {
     # Navigation
@@ -486,6 +500,52 @@ _SV: dict[str, str] = {
     "The demo provider is available.": "Demoleverantören är tillgänglig.",
     "Provider responded and the model exists:\n{model}": "Leverantören svarade och modellen finns:\n{model}",
     "Connection failed": "Anslutningen misslyckades",
+    "Language": "Språk",
+    "Arqen's language: menus, buttons and texts. Takes effect when Arqen restarts.":
+        "Arqens språk: menyer, knappar och texter. Gäller när Arqen startas om.",
+    "Restart to change language": "Starta om för att byta språk",
+    "The language changes when Arqen restarts. Restart now?": "Språket byts när Arqen startas om. Starta om nu?",
+    # Tool catalogue sections (tool_catalog.CATEGORIES)
+    "Windows & programs": "Fönster & program",
+    "Workspace files": "Filer i arbetsytan",
+    "Documents": "Dokument",
+    "Web": "Webb",
+    "Browser": "Webbläsare",
+    "Voice & image": "Röst & bild",
+    "Development": "Utveckling",
+    "Messages": "Meddelanden",
+    "Other": "Övrigt",
+    # Connection cards (arqen/connectors)
+    "The computer's status, time, resources and processes.": "Datorns status, tid, resurser och processer.",
+    "See, focus, start and close programs and windows.": "Se, fokusera, starta och stänga program och fönster.",
+    "List, search, read and change files in the workspace.": "Lista, söka, läsa och ändra filer i arbetsytan.",
+    "Read PDF, Word and Excel files.": "Läsa PDF-, Word- och Excel-filer.",
+    "Search the web, fetch pages, tech news, release notes and weather.": "Söka på webben, hämta sidor, tekniknyheter, release notes och väder.",
+    "Control Arqen's own browser: go to, read, click.": "Styra Arqens egen webbläsare: gå till, läsa, klicka.",
+    "Read text aloud and create images.": "Läsa upp text och skapa bilder.",
+    "Propose things to remember; you approve them.": "Föreslå saker att minnas; du godkänner dem.",
+    "Tools without a group of their own.": "Verktyg utan egen grupp.",
+    "MCP server: {where}": "MCP-server: {where}",
+    "Repos, issues and pull requests. Creating issues requires approval.": "Repon, issues och pull requests. Att skapa issues kräver godkännande.",
+    "Personal token": "Personlig token",
+    "Create a fine-grained token under GitHub → Settings → Developer settings. Give read access to repos and issues only, plus write access to issues if agents should be able to create them.":
+        "Skapa en fine-grained token under GitHub → Settings → Developer settings. Ge bara läsrätt till repon och issues, plus skrivrätt till issues om agenter ska kunna skapa dem.",
+    "Read Gmail, Calendar and Drive. Mail drafts and calendar events are created with approval; nothing is sent.":
+        "Läsa Gmail, Kalender och Drive. Mejlutkast och kalenderhändelser skapas med godkännande; inget skickas.",
+    "Client ID": "Klient-ID",
+    "Client secret": "Klienthemlighet",
+    "Google Cloud Console → APIs & Services → Credentials → Create an OAuth client ID of type Desktop app.":
+        "Google Cloud Console → API:er och tjänster → Inloggningsuppgifter → Skapa OAuth-klient-ID av typen Datorapp (Desktop app).",
+    "Send messages to a channel via webhook, e.g. when a task is done.": "Skicka meddelanden till en kanal via webhook, t.ex. när en uppgift är klar.",
+    "Webhook address": "Webhook-adress",
+    "Channel settings → Integrations → Webhooks → New webhook → Copy URL.": "Kanalinställningar → Integrationer → Webhooks → Ny webhook → Kopiera adress.",
+    "Send messages through your own bot, e.g. when a task is done.": "Skicka meddelanden via en egen bot, t.ex. när en uppgift är klar.",
+    "Bot token": "Bot-token",
+    "Create a bot with @BotFather in Telegram and copy the token.": "Skapa en bot hos @BotFather i Telegram och kopiera token.",
+    "Chat ID": "Chatt-id",
+    "Write something to the bot in Telegram and press FETCH CHAT ID, or get your id from @userinfobot.":
+        "Skriv något till boten i Telegram och tryck HÄMTA CHATT-ID, eller hämta ditt id via @userinfobot.",
+    "Bearer token if the server requires one": "Bearer-token om servern kräver det",
 }
 
 # Task, run and event states are stored in English; these are their labels.
@@ -504,9 +564,36 @@ _STATUS_SV = {
 }
 
 
+# When ``count`` is 1 these replace the plural text, per language.
+_ONE: dict[str, dict[str, str]] = {
+    "en": {
+        "All {count} tools": "{count} tool",
+        "Tool costs in this log: {total} over {count} paid calls": "Tool costs in this log: {total} over {count} paid call",
+        "{count} connections need to be signed in again.": "{count} connection needs to be signed in again.",
+        "Works: {count} tools ({read_only} read-only).": "Works: {count} tool ({read_only} read-only).",
+        "{count} steps  ·  multi-agent pipeline": "{count} step  ·  multi-agent pipeline",
+        "{count} tasks": "{count} task",
+        "{runtime} runtime  ·  {count} tools": "{runtime} runtime  ·  {count} tool",
+        "Arqen found {count} new suggestions. Review them below.": "Arqen found {count} new suggestion. Review it below.",
+        "{count} require approval": "{count} requires approval",
+        "{count} tools  ·  {approval} require approval": "{count} tool  ·  {approval} require approval",
+        "{count} tools": "{count} tool",
+    },
+    "sv": {
+        "All {count} tools": "{count} verktyg",
+        "{count} connections need to be signed in again.": "{count} anslutning behöver loggas in igen.",
+        "{count} tasks": "{count} uppgift",
+        "Arqen found {count} new suggestions. Review them below.": "Arqen hittade {count} nytt förslag. Granska det nedan.",
+    },
+}
+
+
 def tr(text: str, **values) -> str:
     """The UI text for ``text`` in the current language, with ``values`` filled in."""
-    template = _SV.get(text, text) if LANGUAGE == "sv" else text
+    if values.get("count") == 1 and text in _ONE.get(LANGUAGE, {}):
+        template = _ONE[LANGUAGE][text]
+    else:
+        template = _SV.get(text, text) if LANGUAGE == "sv" else text
     return template.format(**values) if values else template
 
 

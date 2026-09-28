@@ -2,18 +2,20 @@ from __future__ import annotations
 
 from arqen.connectors.base import Connector
 from arqen.tools.registry import ToolRegistry
+from arqen.ui.strings import tr
 from arqen.ui.tool_catalog import CATEGORIES, tool_info
 
 # What each built-in group is for, in the words shown on its card.
+# The badge letters stay as they were in Swedish, so the cards look the same.
 _BUILTIN = {
-    "System": ("system", "Datorns status, tid, resurser och processer.", "S"),
-    "Fönster & program": ("windows", "Se, fokusera, starta och stänga program och fönster.", "F"),
-    "Filer i arbetsytan": ("files", "Lista, söka, läsa och ändra filer i arbetsytan.", "A"),
-    "Dokument": ("documents", "Läsa PDF-, Word- och Excel-filer.", "D"),
-    "Webb": ("web", "Söka på webben, hämta sidor, tekniknyheter, release notes och väder.", "W"),
-    "Webbläsare": ("browser", "Styra Arqens egen webbläsare: gå till, läsa, klicka.", "B"),
-    "Röst & bild": ("voice-image", "Läsa upp text och skapa bilder.", "R"),
-    "Minne": ("memory", "Föreslå saker att minnas; du godkänner dem.", "M"),
+    "System": ("system", "The computer's status, time, resources and processes.", "S"),
+    "Windows & programs": ("windows", "See, focus, start and close programs and windows.", "F"),
+    "Workspace files": ("files", "List, search, read and change files in the workspace.", "A"),
+    "Documents": ("documents", "Read PDF, Word and Excel files.", "D"),
+    "Web": ("web", "Search the web, fetch pages, tech news, release notes and weather.", "W"),
+    "Browser": ("browser", "Control Arqen's own browser: go to, read, click.", "B"),
+    "Voice & image": ("voice-image", "Read text aloud and create images.", "R"),
+    "Memory": ("memory", "Propose things to remember; you approve them.", "M"),
 }
 
 
@@ -31,13 +33,13 @@ def builtin_connectors(tools: ToolRegistry) -> list[Connector]:
         if not names:
             continue
         identifier, description, icon = _BUILTIN.get(
-            category, (category.casefold(), "Verktyg utan egen grupp.", category[:1])
+            category, (category.casefold(), "Tools without a group of their own.", category[:1])
         )
         connectors.append(Connector(
             id=f"builtin:{identifier}",
-            name=category,
-            category="Inbyggt",
-            description=description,
+            name=tr(category),
+            category="Built-in",
+            description=tr(description),
             tools=tuple(names),
             icon=icon,
         ))

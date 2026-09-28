@@ -36,3 +36,49 @@ def test_schedule_display_is_swedish():
     assert show(cron="30 7 * * 1") == "Varje måndag kl. 07:30"
     assert show(cron="0 9 1 * *") == "Varje månad den 1 kl. 09:00"
     assert show(run_at=None) == "En gång: inte angivet"
+
+
+def test_english_shows_the_source_text():
+    from arqen.ui import strings
+
+    try:
+        assert strings.set_language("en") == "en"
+        assert tr("Tasks") == "Tasks"
+        assert tr("Delete '{title}'?", title="Test") == "Delete 'Test'?"
+        assert status_label("waiting_approval") == "WAITING APPROVAL"
+    finally:
+        strings.set_language(strings.DEFAULT_LANGUAGE)
+
+
+def test_unknown_language_falls_back_to_swedish():
+    from arqen.ui import strings
+
+    assert strings.set_language("xx") == "sv"
+    assert tr("Tasks") == "Uppgifter"
+
+
+def test_language_is_saved_next_to_other_settings(tmp_path):
+    import json
+
+    from arqen.config.settings import load_language, save_language
+
+    config = tmp_path / "arqen.json"
+    assert load_language(config) == ""
+    config.write_text(json.dumps({"workspace": "x"}), encoding="utf-8")
+    save_language("en", config)
+    assert load_language(config) == "en"
+    assert json.loads(config.read_text(encoding="utf-8"))["workspace"] == "x"
+
+
+def test_a_count_of_one_is_singular():
+    from arqen.ui import strings
+
+    assert tr("{count} tasks", count=1) == "1 uppgift"
+    assert tr("{count} tasks", count=2) == "2 uppgifter"
+    try:
+        strings.set_language("en")
+        assert tr("{count} tools", count=1) == "1 tool"
+        assert tr("{count} require approval", count=1) == "1 requires approval"
+        assert tr("{count} tools", count=3) == "3 tools"
+    finally:
+        strings.set_language(strings.DEFAULT_LANGUAGE)
