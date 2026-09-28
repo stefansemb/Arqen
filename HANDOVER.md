@@ -433,7 +433,16 @@ godkännande svarar `send_message` med `status: "needs_confirmation"` och
 i taget per chatt (lås per session).
 
 Kvar vid behov: svar som strömmas till telefonen (idag väntar sidan på hela
-svaret), röst i telefonen och aviseringar (push). Samma chatt öppen på datorn
+svaret), röst i telefonen och aviseringar (push).
+
+Idé (2026-09-28, inte påbörjad): köra API:t på Ubuntu-servern, som är igång
+dygnet runt och redan ligger i tailnetet, så telefonen når Arqen utan att
+datorn står på (`python -m arqen.api --host <serverns Tailscale-adress>
+--token …`). Då använder den serverns egna data och modeller: chattar,
+minne och uppgifter delas inte med datorn, och verktyg som styr Windows
+(fönster, program, röst) fungerar inte där. Behöver beslut om vad som ska
+synkas eller om servern ska vara den enda platsen för data. Idag gäller:
+datorn måste vara vaken, Arqen igång och Tailscale på i telefonen. Samma chatt öppen på datorn
 och telefonen samtidigt skriver över varandra; senaste sparningen vinner.
 
 ## Inspirationskälla
