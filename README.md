@@ -1,148 +1,171 @@
 # Arqen
 
-Arqen är en lokal AI-assistent för Windows, byggd med PyQt6, med ett
-**Kontrollrum** för agenter, uppgifter och arbetsflöden. Gränssnittet och rösten
-är på svenska, designen mörk med limegröna accenter.
+**A local AI assistant for Windows, with a Mission Control for agents, tasks
+and workflows.**
 
-Arqen är byggt för att vara lokalt, kontrollerbart och utbyggbart. Molnmodeller
-är valfria; lokal körning via Ollama eller LM Studio fungerar som grund. Allt som
-inte går att ångra kräver ditt godkännande.
+Arqen is a desktop app built with PyQt6. You chat with it by text or voice,
+hand work to agents that run in the background, and give those agents exactly
+the tools they need: your files, the web, GitHub, Google, Discord, Telegram or
+any MCP server. Anything that can't be undone waits for your approval.
 
-> Repot heter Arqen-Desktop av historiska skäl. Den gamla desktopversionen
-> utvecklas inte längre; dess sista version finns kvar som taggen
-> `arqen-desktop-legacy`.
+It is built to be local, controllable and extensible. Cloud models are
+optional; a local model through Ollama or LM Studio works as the base.
 
-## Funktioner
+*[Svenska](README.sv.md)* · The interface speaks English or Swedish
+(Settings → Language).
 
-**Chatt och röst**
+![Connections: give an agent access to packages of tools](docs/images/connections.png)
 
-- Chattlista med öppna, byt namn och ta bort; streaming och avbrytning.
-- Svensk röst via Edge TTS (`sv-SE-MattiasNeural`) och taligenkänning via
-  faster-whisper.
-- Röstpanel med en animerad ring som visar om Arqen vilar, lyssnar, tänker eller
-  pratar. Färgerna kan ändras i `config/arqen.json`.
-- Statistikpanel med tokens och kostnad för chatten, senaste svaret och totalt.
+## Features
 
-**Kontrollrum**
+**Chat and voice**
 
-- Uppgifter, arbetsflöden med flera agenter, scheman och aktivitetslogg.
-- Agenter med egna verktygsregler. Varje uppgift körs i en egen, fristående
-  Arqen, så en agents begränsningar aldrig påverkar chatten.
-- Timeout, återhämtning, försök igen och sparade resultat för uppgifter.
-- En godkännanderad överst i alla vyer samlar allt som väntar på dig.
+- Chats you can open, rename and delete; replies stream in and can be stopped
+  mid-answer.
+- Neural voice through Edge TTS (`en-GB-RyanNeural`, or `sv-SE-MattiasNeural`
+  in Swedish) and speech recognition through faster-whisper.
+- A voice panel with an animated ring that shows whether Arqen is idle,
+  listening, thinking or speaking.
+- A stats panel with tokens and cost for the chat, the latest reply and in
+  total. The cost is the provider's own figure, not an estimate.
 
-**Minne**
+**Mission Control**
 
-- Långtidsminne med källa, status och säkerhet.
-- Arqen **föreslår** minnen när du berättar något bestående; du godkänner eller
-  avvisar dem under Minne. Bara godkända minnen används.
-- **Reflektera**: Arqen läser senaste uppgifter och chattar och föreslår
-  bestående lärdomar, också de som förslag.
-- Relevanta minnen väljs ut per meddelande när minnet växer.
-- "Kom ihåg att …" sparar direkt.
+- Tasks, multi-agent workflows, schedules (daily, weekly, monthly or once) and
+  an activity log.
+- Agents with their own tool rules. Every task runs in its own Arqen, so an
+  agent's limits never affect your chat.
+- Timeouts, recovery, retries and stored results for tasks.
+- One approval bar at the top of every view collects everything that is
+  waiting for you.
 
-**Verktyg och säkerhet**
+**Memory**
 
-- Verktyg för system, fönster och program, filer i arbetsytan, dokument (PDF,
-  Word, Excel), webben, en egen webbläsare, väder, röst och bildgenerering.
-- Godkännande krävs för att skriva, ta bort, flytta eller ångra filer, skapa
-  bilder (kostar pengar) och stänga program.
-- Tool Gateway med risknivåer, regler per agent och en lokal logg över alla
-  verktygsanrop, synliga under Verktyg.
-- Minnen som ser ut som lösenord eller nycklar sparas aldrig.
+- Long-term memory with source, status and confidence.
+- Arqen **suggests** memories when you tell it something lasting; you approve
+  or reject them under Memory. Only approved memories are used.
+- **Reflect**: Arqen reads recent tasks and chats and suggests lasting lessons,
+  also as suggestions.
+- "Remember that …" saves right away.
 
-**Anslutningar**
+**Tools and safety**
 
-- Ge en agent tillgång till paket av verktyg med ett klick per kort.
-- **GitHub** (personlig token): repon, issues och pull requests; att skapa en
-  issue kräver godkännande.
-- **Google** (OAuth med egen Desktop-klient): söka och läsa Gmail, se kommande
-  händelser i Kalender, söka och läsa filer i Drive. Mejlutkast och
-  kalenderhändelser skapas med godkännande; inget mejl skickas.
-- **Discord** (webhook) och **Telegram** (bot): skicka meddelanden med
-  godkännande, och valfria aviseringar när uppgifter blir klara eller misslyckas.
-- **MCP-servrar**: lägg till en adress (t.ex. Zapiers MCP-URL) eller ett lokalt
-  program; serverns verktyg blir Arqen-verktyg. De kräver godkännande om servern
-  inte märker dem som endast läsande.
-- Nycklar sparas i `config/arqen-secrets.json`, läses först när ett verktyg körs
-  och rensas bort ur allt verktygen svarar.
+- Tools for the system, windows and programs, files in your workspace,
+  documents (PDF, Word, Excel), the web, a built-in browser, voice and image
+  generation.
+- Approval is required to write, delete, move or undo files, to create images
+  (which costs money) and to close programs.
+- A Tool Gateway with risk levels, rules per agent and a local log of every
+  tool call, including its cost.
+- API keys are read only when a tool runs and are scrubbed from everything a
+  tool returns. Memories that look like passwords or keys are never stored.
 
-**Modeller**
+![The Tool Gateway catalogue](docs/images/tools.png)
 
-- Ollama/LM Studio, OpenRouter, OpenAI, Gemini, Claude och Arqen Remote.
-- Färdiga profiler: Privat (Ollama), Snabb (OpenRouter), Viktigt (OpenAI) och
-  Kreativt (Gemini).
-- Valfri reservprovider om den första inte svarar (avstängd som standard).
+**Connections**
 
-## Kom igång
+- **GitHub** (personal token): repos, issues and pull requests; creating an
+  issue needs approval.
+- **Google** (OAuth with your own Desktop client): search and read Gmail, see
+  upcoming Calendar events, search and read Drive files. Mail drafts and
+  calendar events are created with approval; no mail is ever sent.
+- **Discord** (webhook) and **Telegram** (bot): send messages with approval,
+  and optional notifications when tasks finish or fail.
+- **MCP servers**: add an address (e.g. Zapier's MCP URL) or a local program,
+  and the server's tools become Arqen tools. They need approval unless the
+  server marks them read-only.
 
-Arqen är byggt för Windows och kräver Python 3.10 eller senare (utvecklas på
+**Models**
+
+- Ollama / LM Studio, OpenRouter, OpenAI, Gemini and Claude.
+- Ready-made profiles: Private (Ollama), Fast (OpenRouter), Important (OpenAI)
+  and Creative (Gemini).
+- An optional fallback provider if the first one doesn't answer (off by
+  default).
+
+## Getting started
+
+Arqen is built for **Windows** and needs **Python 3.10 or later** (developed on
 3.12).
 
 ```powershell
+git clone https://github.com/stefansemb/Arqen-Desktop.git
+cd Arqen-Desktop
 python -m pip install -r requirements.txt
 python -m playwright install chromium
 python -m arqen.ui
 ```
 
-- **ffmpeg** behöver finnas i `PATH` för rösten (ljudnivå och uppspelning).
-- Kopiera `config/arqen.example.json` till `config/arqen.json`, eller välj en
-  profil under Inställningar i appen.
-- API-nycklar sparas separat i `config/arqen-secrets.json`, som aldrig checkas
-  in. Ange dem under Inställningar.
-- Arbetsytan, mappen där Arqen läser och skriver filer, väljs under
-  Inställningar → Arbetsyta.
+Then, in the app:
 
-Kärnan utan gränssnitt startas med `python -m arqen`. Kontrollera en lokal
-provider med `python -m arqen.doctor`.
+1. Open **Settings** (bottom left) and pick a profile, or choose a provider
+   and model yourself. Paste your API key and press **TEST CONNECTION**, then
+   **SAVE**. For a fully local setup, start Ollama and choose *Private –
+   Ollama*.
+2. Under **Settings → Workspace**, choose the folder Arqen may read and write
+   files in. Empty means the application folder.
+3. Say hello in **Chat**. Try "What's in my workspace?" or
+   "remember that I prefer short answers".
 
-## Lokalt API
+Good to know:
 
-API:t är en separat process och startas inte av appen:
+- **ffmpeg** must be on your `PATH` for the voice (playback and the level
+  meter). Install it with `winget install Gyan.FFmpeg`.
+- The first time you use the microphone, faster-whisper downloads its
+  speech model (`small` by default). Set `ARQEN_WHISPER_MODEL`,
+  `ARQEN_WHISPER_DEVICE` (`cpu` or `cuda`) or `ARQEN_WHISPER_COMPUTE_TYPE` to
+  change it.
+- Settings are saved in `config/arqen.json`; `config/arqen.example.json` shows
+  the format. API keys are kept apart in `config/arqen-secrets.json`. Neither
+  is ever committed.
+- Chats, memory, tasks and the tool log live in `data/`.
+- For Google, create your own OAuth client of type *Desktop app* in Google
+  Cloud Console; the connection dialog explains where. While the client is in
+  testing mode, Google makes you sign in again every 7 days.
+
+The core without the window starts with `python -m arqen`. Check a local
+provider with `python -m arqen.doctor`.
+
+## Local API
+
+The API is a separate process and is not started by the app:
 
 ```powershell
-python -m arqen.api --port 8765 --token <din-token>
+python -m arqen.api --port 8765 --token <your-token>
 ```
 
-Det lyssnar bara på `127.0.0.1`. Token kan också sättas med miljövariabeln
-`ARQEN_API_TOKEN`; utan token krävs ingen inloggning, så sätt alltid en om något
-annat än du själv kan nå datorn. Alla anrop utom `/api/v1/health` kräver då
-`Authorization: Bearer <token>`.
+It listens on `127.0.0.1` only. The token can also be set with the
+`ARQEN_API_TOKEN` environment variable. Without a token no sign-in is
+required, so always set one if anything but you can reach the machine. Every
+call except `/api/v1/health` then needs `Authorization: Bearer <token>`.
 
-Endpoints under `/api/v1` finns för sessioner och meddelanden, status,
-uppgifter, agenter, godkännanden, scheman, arbetsflöden och verktyg. Se
-[MOBILE_API_PLAN.md](MOBILE_API_PLAN.md) för hela listan och vad som ännu inte
-fungerar fullt ut.
+Endpoints under `/api/v1` cover sessions and messages, status, tasks, agents,
+approvals, schedules, workflows and tools. See
+[MOBILE_API_PLAN.md](MOBILE_API_PLAN.md) (in Swedish) for the full list and
+what is not finished yet.
 
-## Utveckling
+## Development
 
 ```powershell
 python -m compileall -q arqen
 python -m pytest -q
 ```
 
-- `tests/conftest.py` pekar om arbetsytan och datakatalogen till en tillfällig
-  mapp, så att tester aldrig rör dina chattar, minnen eller uppgifter. Ta inte
-  bort den.
-- All text i gränssnittet går via `tr()` i `arqen/ui/strings.py`: skriv den på
-  engelska i koden och lägg den svenska översättningen i tabellen där, inte
-  direkt i `window.py`. Språket väljs i Inställningar → Språk; engelska är
-  standard.
-- Nya verktyg behöver en kategori och ett namn på engelska och svenska i
-  `arqen/ui/tool_catalog.py`; ett test kontrollerar det.
-
-## Dokument
-
-- [HANDOVER.md](HANDOVER.md) – aktuellt läge, beslut och nästa steg.
-- [ARQEN_UI_DIRECTION.md](ARQEN_UI_DIRECTION.md) – riktning för gränssnittet.
-- [HERMES_MISSION_CONTROL_PLAN.md](HERMES_MISSION_CONTROL_PLAN.md) – plan för
-  Kontrollrummet och Hermes.
-- [MOBILE_API_PLAN.md](MOBILE_API_PLAN.md) – API och framtida mobilklient.
-- [DESIGN.md](DESIGN.md) och [FEATURE_INVENTORY.md](FEATURE_INVENTORY.md) –
-  design- och funktionsbeslut.
+- `tests/conftest.py` points the workspace, data and config folders at a
+  temporary directory, so tests never touch your chats, memory, tasks or keys.
+  Don't remove it.
+- All UI text goes through `tr()` in `arqen/ui/strings.py`. Write it in
+  English in the code and add the Swedish translation to the table there.
+- New tools need a category and a name in English and Swedish in
+  `arqen/ui/tool_catalog.py`; a test checks this.
 
 ## Status
 
-Chatt, röst, Kontrollrum, Memory 2.0 och Tool Gateway fungerar lokalt. Kvar i
-närtid: kostnad per verktygsanrop och nyckelhantering via Tool Gateway,
-bekräftelseflöden i API:t och en mobilklient. Se HANDOVER för detaljer.
+Chat, voice, Mission Control, memory with suggestions and reflection, the
+Tool Gateway and the connections (GitHub, Google, Discord, Telegram, MCP) work
+locally. Next up: approvals through the API and a mobile client. The working
+notes are in [HANDOVER.md](HANDOVER.md) (in Swedish).
+
+> The repository is called Arqen-Desktop for historical reasons. The old
+> desktop version is no longer developed; its last release is kept as the tag
+> `arqen-desktop-legacy`.

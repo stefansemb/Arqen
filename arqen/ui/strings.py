@@ -411,7 +411,7 @@ _SV: dict[str, str] = {
     "obsolete": "föråldrad",
     "MARK OBSOLETE": "MARKERA FÖRÅLDRAD",
     "RESTORE": "ÅTERSTÄLL",
-    'Nothing approved yet. Say "kom ihåg att ..." or approve a suggestion.':
+    'Nothing approved yet. Say "remember that ..." or approve a suggestion.':
         'Inget godkänt än. Säg "kom ihåg att ..." eller godkänn ett förslag.',
     "DELETE": "TA BORT",
     "Edit memory": "Redigera minne",
@@ -463,6 +463,7 @@ _SV: dict[str, str] = {
     "Local Ollama": "Lokal Ollama",
     "Private – Ollama": "Privat – Ollama",
     "Fast – OpenRouter": "Snabb – OpenRouter",
+    "Important – OpenAI": "Viktigt – OpenAI",
     "Creative – Gemini": "Kreativt – Gemini",
     "Description": "Beskrivning",
     "Local and private. Uses Ollama without cloud fallback.": "Lokal och privat. Använder Ollama utan reserv i molnet.",

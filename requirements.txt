@@ -5,8 +5,11 @@ pypdf>=5,<7
 python-docx>=1.1,<2
 openpyxl>=3.1,<4
 playwright>=1.40,<2
-kokoro>=0.9.4
-soundfile>=0.12,<1
 sounddevice>=0.5,<1
+numpy>=1.24,<3
 faster-whisper>=1.1,<2
 edge-tts>=7,<8
+
+# Optional: a local voice for English text while Arqen speaks Swedish.
+# It pulls in PyTorch, a large download, so it is not installed by default:
+#   python -m pip install "kokoro>=0.9.4" "soundfile>=0.12,<1"

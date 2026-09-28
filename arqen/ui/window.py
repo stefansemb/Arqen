@@ -1749,7 +1749,7 @@ class ArqenWindow(QMainWindow):
             if record.content == selected:
                 self.memory_view_list.setCurrentItem(item)
         if not kept:
-            empty = QListWidgetItem(tr("Nothing approved yet. Say \"kom ihåg att ...\" or approve a suggestion."))
+            empty = QListWidgetItem(tr("Nothing approved yet. Say \"remember that ...\" or approve a suggestion."))
             empty.setFlags(Qt.ItemFlag.NoItemFlags)
             empty.setForeground(QColor("#8d969d"))
             self.memory_view_list.addItem(empty)
@@ -2985,9 +2985,9 @@ class ArqenWindow(QMainWindow):
         content_format, accepted = QInputDialog.getText(self, tr("Run workflow"), tr("Content format (optional):"), text=tr("YouTube video"))
         if not accepted:
             return
-        input_text = f"Ämne: {topic.strip()}"
+        input_text = f"Topic: {topic.strip()}"
         if audience.strip():
-            input_text += f"\nMålgrupp: {audience.strip()}"
+            input_text += f"\nAudience: {audience.strip()}"
         if content_format.strip():
             input_text += f"\nFormat: {content_format.strip()}"
         try:
@@ -3769,15 +3769,15 @@ class ArqenWindow(QMainWindow):
             normalized = re.sub(r"[^a-zåäö0-9 ]", " ", prompt.casefold())
             normalized = " ".join(normalized.split())
             affirmative = (
-                normalized in {"ja", "japp", "yes", "bekräfta", "bekrafta", "kör", "kor"}
-                or normalized.startswith(("ja ", "japp ", "yes ", "bekräfta ", "bekrafta ", "kör ", "kor "))
+                normalized in {"ja", "japp", "yes", "yep", "ok", "okay", "bekräfta", "bekrafta", "confirm", "kör", "kor", "go ahead"}
+                or normalized.startswith(("ja ", "japp ", "yes ", "bekräfta ", "bekrafta ", "confirm ", "kör ", "kor "))
                 or "öppna den" in normalized
                 or "oppna den" in normalized
                 or "jag öppnar" in normalized
                 or "jag oppnar" in normalized
             )
-            negative = normalized in {"nej", "no", "avbryt", "ångra", "angra"} or normalized.startswith(
-                ("nej ", "no ", "avbryt ")
+            negative = normalized in {"nej", "no", "nope", "avbryt", "cancel", "ångra", "angra"} or normalized.startswith(
+                ("nej ", "no ", "avbryt ", "cancel ")
             )
             self.input.clear()
             if affirmative or negative:
@@ -4410,7 +4410,7 @@ class ArqenWindow(QMainWindow):
         profile = QComboBox()
         profile.addItem(tr("Private – Ollama"), "private")
         profile.addItem(tr("Fast – OpenRouter"), "fast")
-        profile.addItem("Viktigt – OpenAI", "important")
+        profile.addItem(tr("Important – OpenAI"), "important")
         # The creative preset runs on Gemini; the label used to say OpenRouter.
         profile.addItem(tr("Creative – Gemini"), "creative")
         saved_profile = {"private": "private", "fast": "fast", "important": "important", "creative": "creative"}.get(config.profile_name, "")

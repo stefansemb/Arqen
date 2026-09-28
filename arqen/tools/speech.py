@@ -384,7 +384,9 @@ class SpeakTextTool(Tool):
         if strings.LANGUAGE == "sv":
             text = re.sub(r"arqen", "Arkén", text, flags=re.IGNORECASE)
         speech_text = _speech_clean(text)
-        if _looks_english(speech_text) and _speak_kokoro(speech_text):
+        # Kokoro reads English text aloud while Arqen speaks Swedish; in English
+        # the Edge voice already does, and one voice throughout sounds right.
+        if strings.LANGUAGE == "sv" and _looks_english(speech_text) and _speak_kokoro(speech_text):
             _speech_done.wait()
             if _kokoro_last_error is None:
                 return "Speech started with Kokoro English voice."
