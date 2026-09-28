@@ -1,8 +1,10 @@
+import threading
 from dataclasses import dataclass
-from typing import Callable
+from typing import Any, Callable
 
 from arqen.core.engine import ConversationEngine
-from arqen.core.session_store import ChatSession, SessionStore
+from arqen.core.session_store import DEFAULT_TITLE, ChatSession, SessionStore
+from arqen.ui.strings import tr
 
 
 @dataclass(frozen=True)
@@ -11,7 +13,10 @@ class MessageResult:
     user_message: str
     assistant_message: str
     speakable: bool
+    # "ready", or "needs_confirmation" when a tool waits for the user; then
+    # ``confirmation`` names the tool and its arguments.
     status: str = "ready"
+    confirmation: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -42,8 +47,12 @@ class ArqenApplication:
         self.session_store = session_store or SessionStore()
         self._engine_factory = engine_factory
         self._engines: dict[str, ConversationEngine] = {}
+        # One turn at a time per chat: two requests on the same engine would
+        # interleave their messages and tool calls.
+        self._locks: dict[str, threading.Lock] = {}
+        self._locks_guard = threading.Lock()
 
-    def create_session(self, title: str = "New chat") -> SessionSummary:
+    def create_session(self, title: str = DEFAULT_TITLE) -> SessionSummary:
         session = self.session_store.create(title)
         self.session_store.save(session)
         self._engines[session.session_id] = self._new_engine(session)
@@ -58,7 +67,7 @@ class ArqenApplication:
     def rename_session(self, session_id: str, title: str) -> SessionSummary:
         cleaned_title = title.strip()
         if not cleaned_title:
-            raise ValueError("Titeln får inte vara tom")
+            raise ValueError(tr("The title cannot be empty."))
         session = self.session_store.load(session_id)
         session.title = cleaned_title
         self.session_store.save(session)
@@ -71,15 +80,26 @@ class ArqenApplication:
     def send_message(self, session_id: str, content: str) -> MessageResult:
         prompt = content.strip()
         if not prompt:
-            raise ValueError("Meddelandet får inte vara tomt")
-        engine = self._engine_for(session_id)
-        response = engine.respond(prompt)
-        return MessageResult(
-            session_id=session_id,
-            user_message=prompt,
-            assistant_message=response,
-            speakable=engine.last_response_speakable,
-        )
+            raise ValueError(tr("The message cannot be empty."))
+        with self._lock(session_id):
+            engine = self._engine_for(session_id)
+            response = engine.respond(prompt)
+            return self._result(session_id, prompt, response, engine)
+
+    def pending_confirmation(self, session_id: str) -> dict[str, Any] | None:
+        """The tool waiting for the user in this chat, if any."""
+        engine = self._engines.get(session_id)
+        pending = engine.executor.pending if engine is not None else None
+        return None if pending is None else {"tool": pending[0], "arguments": dict(pending[1])}
+
+    def confirm(self, session_id: str, approve: bool) -> MessageResult:
+        """Run or cancel the tool this chat is waiting on, and let Arqen finish the turn."""
+        with self._lock(session_id):
+            engine = self._engines.get(session_id)
+            if engine is None or engine.executor.pending is None:
+                raise ValueError(tr("Nothing is waiting for confirmation."))
+            response = engine.confirm_pending_tool(approve)
+            return self._result(session_id, "", response, engine)
 
     def status(self, session_id: str | None = None) -> ArqenStatus:
         engine = self._engine_for(session_id) if session_id else self._default_engine()
@@ -100,6 +120,21 @@ class ArqenApplication:
 
     def tool_policies(self) -> list[dict]:
         return self._default_engine().gateway.policy_view()
+
+    def _result(self, session_id: str, prompt: str, response: str, engine: ConversationEngine) -> MessageResult:
+        confirmation = self.pending_confirmation(session_id)
+        return MessageResult(
+            session_id=session_id,
+            user_message=prompt,
+            assistant_message=response,
+            speakable=engine.last_response_speakable,
+            status="needs_confirmation" if confirmation else "ready",
+            confirmation=confirmation,
+        )
+
+    def _lock(self, session_id: str) -> threading.Lock:
+        with self._locks_guard:
+            return self._locks.setdefault(session_id, threading.Lock())
 
     def _default_engine(self) -> ConversationEngine:
         if self._engines:

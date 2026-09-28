@@ -47,8 +47,8 @@ gammal utcheckning med egen `data/`; en `git pull` där gör den till Kontrollru
 ## Viktiga nästa åtgärder
 
 1. Tool Gateway, Memory 2.0 och Anslutningar fas 1–3 är klara, liksom
-   "Arqen (chatten)" i agentväljaren och bättre webbresearch för Scout. Kvar
-   enligt planen: mobilstödet (se avsnittet Mobilstöd).
+   "Arqen (chatten)" i agentväljaren, bättre webbresearch för Scout och
+   mobilstödet (se avsnittet Mobilstöd).
 
 Reserven (`FallbackProvider`) har `supports_tools`, `respond_stream` och 90 s
 timeout. Profilval i Inställningar skrev tidigare in 10 s; nu används
@@ -311,7 +311,7 @@ Faser:
 
 ## Teststatus
 
-246 tester, alla gröna. Kör efter ändringar:
+256 tester, alla gröna. Kör efter ändringar:
 
 ```powershell
 python -m compileall -q arqen
@@ -397,20 +397,44 @@ omstart; Arqen erbjuder att starta om direkt.
   svenska texter); engelska testas i `tests/test_english.py`.
 
 Kvar på svenska: nyckelordsgenvägarna i `_direct_safe_command` (bara för
-lokala modeller utan nativa verktyg), mobil-API:ts sidor i
-`arqen/api/server.py` och dokumentationen (README, HANDOVER m.fl.).
+lokala modeller utan nativa verktyg) och dokumentationen (README, HANDOVER m.fl.).
 
 Kod, loggar och tester är på engelska. Ny text i UI:t skrivs på engelska och
 får en svensk rad i `_SV`, i stället för att skrivas direkt i `window.py`.
 
-## Mobilstöd
+## Mobilstöd (klart 2026-09-28)
 
-Plan i `MOBILE_API_PLAN.md`. Application service finns i
-`arqen/application/service.py` med sessioner, meddelanden, status, namnbyte och
-borttagning. Ett lokalt API finns i `arqen/api/server.py` med Bearer-token och
-endpoints för health, status, sessioner och meddelanden. Nästa steg är att koppla
-serverstart till applikationen och därefter lägga till bekräftelseflöden och
-mobilklient.
+Inställningar → Mobil slår på API:t i appen (`arqen/api/mobile.py`,
+`MobileServer` i en bakgrundstråd; av som standard). Nätverk: **Tailscale**
+(lyssnar bara på datorns Tailscale-adress, 100.64.0.0/10, hittad via
+`tailscale ip -4` eller nätverkskorten), **lokalt nätverk** (0.0.0.0) eller
+**bara den här datorn**. Ändringar gäller direkt. Inställningen sparas i
+`arqen.json` → `mobile`, token (`secrets.token_urlsafe(32)`) i
+`arqen-secrets.json` → `mobile`, så gatewayn rensar den ur verktygssvar.
+Fliken visar adressen och en QR-kod (paketet `qrcode`) med länken
+`http://<adress>:<port>/#token=…`; token ligger i fragmentet och skickas
+aldrig till servern. Sidan sparar den i `localStorage` och tar bort den ur
+adressfältet. NY TOKEN loggar ut alla telefoner.
+
+Säkerhet: servern vägrar starta på annat än loopback utan token, och token
+jämförs med `hmac.compare_digest`. HTML-svaren har `no-store`,
+`X-Frame-Options: DENY` och `Referrer-Policy: no-referrer`. I appen startas
+servern med `run_workers=False`: appen kör redan scheduler och task-worker.
+Telefonens chattar byggs som chattens motor (`apply_chat_tool_limits`) och
+syns i chattlistan på datorn.
+
+Telefonsidan (`arqen/api/mobile_page.py`, serveras på `/`, med manifest så
+den kan läggas på hemskärmen): Chattar, Godkännanden (Kontrollrummets, med
+räknare som uppdateras var 20:e sekund) och Uppgifter (status och resultat).
+Texterna fylls i på användarens språk när sidan serveras. Kräver ett verktyg
+godkännande svarar `send_message` med `status: "needs_confirmation"` och
+`confirmation: {tool, arguments}`; telefonen visar ett kort och svarar med
+`POST /api/v1/sessions/{id}/confirmation` (`ArqenApplication.confirm`). En tur
+i taget per chatt (lås per session).
+
+Kvar vid behov: svar som strömmas till telefonen (idag väntar sidan på hela
+svaret), röst i telefonen och aviseringar (push). Samma chatt öppen på datorn
+och telefonen samtidigt skriver över varandra; senaste sparningen vinner.
 
 ## Inspirationskälla
 

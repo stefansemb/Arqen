@@ -102,18 +102,40 @@ python -m arqen.ui
 Kärnan utan gränssnitt startas med `python -m arqen`. Kontrollera en lokal
 provider med `python -m arqen.doctor`.
 
+## Arqen i telefonen
+
+Chatta med Arqen, godkänn verktyg och Kontrollrummets godkännanden och följ
+dina uppgifter i telefonens webbläsare, medan Arqen körs på datorn.
+
+1. Installera [Tailscale](https://tailscale.com) på datorn och telefonen och
+   logga in med samma konto. Då når bara enheter i ditt eget tailnet Arqen;
+   inget öppnas mot internet.
+2. Öppna **Inställningar → Mobil** i Arqen och kryssa i *Låt min telefon nå
+   Arqen*.
+3. Skanna QR-koden med telefonens kamera och lägg sidan på hemskärmen.
+
+QR-koden innehåller en token som ger full åtkomst till Arqen, så dela den
+inte; **NY TOKEN** loggar ut alla telefoner. *Lokalt nätverk* fungerar utan
+Tailscale för allt på samma wifi, och *Bara den här datorn* är till för att
+prova sidan i en webbläsare. Ett verktyg som kräver godkännande visas som ett
+kort med verktygets argument och **Godkänn** / **Avvisa**.
+
 ## Lokalt API
 
-API:t är en separat process och startas inte av appen:
+Telefonsidan pratar med Arqens API. Utan desktopappen kan det köras som en
+egen process:
 
 ```powershell
 python -m arqen.api --port 8765 --token <din-token>
 ```
 
-Det lyssnar bara på `127.0.0.1`. Token kan också sättas med miljövariabeln
-`ARQEN_API_TOKEN`; utan token krävs ingen inloggning, så sätt alltid en om något
-annat än du själv kan nå datorn. Alla anrop utom `/api/v1/health` kräver då
-`Authorization: Bearer <token>`.
+Det lyssnar på `127.0.0.1` om inte `--host` säger annat, och vägrar alla
+andra adresser utan token. Token kan också sättas med miljövariabeln
+`ARQEN_API_TOKEN`; alla anrop utom `/api/v1/health` kräver då
+`Authorization: Bearer <token>`. Kräver ett verktyg godkännande svarar ett
+meddelande med `"status": "needs_confirmation"`, verktyget och dess
+argument; svara med `POST /api/v1/sessions/{id}/confirmation` och
+`{"approve": true}` eller `false`.
 
 Endpoints under `/api/v1` finns för sessioner och meddelanden, status,
 uppgifter, agenter, godkännanden, scheman, arbetsflöden och verktyg. Se
@@ -151,7 +173,7 @@ python -m pytest -q
 
 Chatt, röst, Kontrollrum, Memory 2.0, Tool Gateway (med kostnad och
 nyckelhantering) och anslutningarna (GitHub, Google, Discord, Telegram, MCP)
-fungerar lokalt. Kvar i närtid: bekräftelseflöden i API:t och en mobilklient.
+fungerar lokalt, och i telefonen via Tailscale.
 Se HANDOVER för detaljer.
 
 ## Licens

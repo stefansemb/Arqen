@@ -1,3 +1,5 @@
+import hmac
+import ipaddress
 import json
 import glob
 import os
@@ -16,10 +18,23 @@ from arqen.config.settings import load_mission_runtime_config
 from arqen.mission import Approval, Event, MissionRunner, MissionScheduler, MissionStore, Schedule, Task, Workflow, WorkflowRunner, WorkflowStep
 from arqen.mission.scheduler_worker import SchedulerWorker
 from arqen.mission.task_worker import TaskWorker
+from arqen.api.mobile_page import manifest, mobile_page, ICON_SVG
+
+
+def _is_loopback(host: str) -> bool:
+    try:
+        return ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return host == "localhost"
 
 
 class ArqenHTTPServer(ThreadingHTTPServer):
-    def __init__(self, server_address: tuple[str, int], application: ArqenApplication, token: str) -> None:
+    def __init__(self, server_address: tuple[str, int], application: ArqenApplication, token: str,
+                 run_workers: bool = True) -> None:
+        # Anything but this computer can reach a server on another address,
+        # and without a token every chat, task and tool would be open to it.
+        if not token and not _is_loopback(server_address[0]):
+            raise ValueError("A token is required to listen on anything but this computer.")
         super().__init__(server_address, ArqenRequestHandler)
         self.application = application
         self.token = token
@@ -27,14 +42,20 @@ class ArqenHTTPServer(ThreadingHTTPServer):
         runtimes = self._mission_runtimes()
         self.mission_runner = MissionRunner(self.mission_store, application._engine_factory, runtimes)
         self.workflow_runner = WorkflowRunner(self.mission_store, self.mission_runner)
-        self.scheduler_worker = SchedulerWorker(MissionScheduler(self.mission_store, self.workflow_runner))
-        self.scheduler_worker.start()
-        self.task_worker = TaskWorker(self.mission_store, self.mission_runner)
-        self.task_worker.start()
+        # Started here when the API runs on its own; the desktop app runs its own.
+        self.scheduler_worker = None
+        self.task_worker = None
+        if run_workers:
+            self.scheduler_worker = SchedulerWorker(MissionScheduler(self.mission_store, self.workflow_runner))
+            self.scheduler_worker.start()
+            self.task_worker = TaskWorker(self.mission_store, self.mission_runner)
+            self.task_worker.start()
 
     def server_close(self) -> None:
-        self.task_worker.stop()
-        self.scheduler_worker.stop()
+        if self.task_worker is not None:
+            self.task_worker.stop()
+        if self.scheduler_worker is not None:
+            self.scheduler_worker.stop()
         super().server_close()
 
     def _mission_runtimes(self) -> dict[str, Any]:
@@ -55,7 +76,13 @@ class ArqenRequestHandler(BaseHTTPRequestHandler):
         path = urlparse(self.path).path.rstrip("/") or "/"
         try:
             if path == "/":
-                self._send_html(MOBILE_PAGE)
+                self._send_html(mobile_page())
+                return
+            if path == "/manifest.webmanifest":
+                self._send_bytes(json.dumps(manifest()).encode("utf-8"), "application/manifest+json")
+                return
+            if path == "/icon.svg":
+                self._send_bytes(ICON_SVG.encode("utf-8"), "image/svg+xml")
                 return
             if path == "/control":
                 self._send_html(CONTROL_PAGE)
@@ -115,7 +142,7 @@ class ArqenRequestHandler(BaseHTTPRequestHandler):
             if path.startswith("/api/v1/mission/runs/") and path.endswith("/resume"):
                 # Resuming starts work, so it must not happen on a read: a
                 # link, a prefetch or a crawler could otherwise trigger it.
-                self._error(HTTPStatus.METHOD_NOT_ALLOWED, "method_not_allowed", "Använd POST för att återuppta en körning.")
+                self._error(HTTPStatus.METHOD_NOT_ALLOWED, "method_not_allowed", "Use POST to resume a run.")
                 return
             if path.startswith("/api/v1/mission/tasks/"):
                 task_id = path.removeprefix("/api/v1/mission/tasks/").strip("/")
@@ -133,15 +160,17 @@ class ArqenRequestHandler(BaseHTTPRequestHandler):
             if path.startswith("/api/v1/sessions/"):
                 session_id = self._session_id(path)
                 session = self.server.application.get_session(session_id)
-                self._send_json(HTTPStatus.OK, {"data": self._as_json(session)})
+                data = self._as_json(session)
+                data["confirmation"] = self.server.application.pending_confirmation(session_id)
+                self._send_json(HTTPStatus.OK, {"data": data})
                 return
-            self._error(HTTPStatus.NOT_FOUND, "not_found", "Resursen finns inte.")
+            self._error(HTTPStatus.NOT_FOUND, "not_found", "Not found.")
         except FileNotFoundError:
-            self._error(HTTPStatus.NOT_FOUND, "not_found", "Sessionen finns inte.")
+            self._error(HTTPStatus.NOT_FOUND, "not_found", "Not found.")
         except PermissionError as exc:
             self._error(HTTPStatus.UNAUTHORIZED, "unauthorized", str(exc))
         except Exception:
-            self._error(HTTPStatus.INTERNAL_SERVER_ERROR, "internal_error", "Ett internt fel uppstod.")
+            self._error(HTTPStatus.INTERNAL_SERVER_ERROR, "internal_error", "An internal error occurred.")
 
     def do_POST(self) -> None:
         path = urlparse(self.path).path.rstrip("/")
@@ -156,7 +185,7 @@ class ArqenRequestHandler(BaseHTTPRequestHandler):
                 title = str(payload.get("title", "")).strip()
                 prompt = str(payload.get("prompt", "")).strip()
                 if not title or not prompt:
-                    raise ValueError("title och prompt krävs.")
+                    raise ValueError("title and prompt are required.")
                 task = Task.create(title, prompt, payload.get("agent_id"))
                 self.server.mission_store.save_task(task)
                 self.server.mission_store.add_event(Event.create(task.id, "created", "Task created"))
@@ -167,7 +196,7 @@ class ArqenRequestHandler(BaseHTTPRequestHandler):
                 name = str(payload.get("name", "")).strip()
                 role = str(payload.get("role", "")).strip()
                 if not agent_id or not name or not role:
-                    raise ValueError("id, name och role krävs.")
+                    raise ValueError("id, name and role are required.")
                 from arqen.mission import Agent
                 agent = Agent(agent_id, name, role, str(payload.get("runtime", "arqen")), bool(payload.get("enabled", True)))
                 self.server.mission_store.save_agent(agent)
@@ -177,7 +206,7 @@ class ArqenRequestHandler(BaseHTTPRequestHandler):
                 task_id = str(payload.get("task_id", "")).strip()
                 action = str(payload.get("action", "")).strip()
                 if not task_id or not action:
-                    raise ValueError("task_id och action krävs.")
+                    raise ValueError("task_id and action are required.")
                 approval = Approval(__import__("uuid").uuid4().hex, task_id, action, dict(payload.get("payload", {})))
                 self.server.mission_store.save_approval(approval)
                 self._send_json(HTTPStatus.CREATED, {"data": self._as_json(approval)})
@@ -186,7 +215,7 @@ class ArqenRequestHandler(BaseHTTPRequestHandler):
                 name = str(payload.get("name", "")).strip()
                 prompt = str(payload.get("prompt", "")).strip()
                 if not name or not prompt or (not payload.get("cron") and not payload.get("run_at")):
-                    raise ValueError("name, prompt och cron eller run_at krävs.")
+                    raise ValueError("name, prompt and cron or run_at are required.")
                 schedule = Schedule(uuid.uuid4().hex, name, prompt, payload.get("agent_id"), payload.get("cron"), payload.get("run_at"), True, workflow_id=payload.get("workflow_id"))
                 self.server.mission_store.save_schedule(schedule)
                 self._send_json(HTTPStatus.CREATED, {"data": self._as_json(schedule)})
@@ -195,10 +224,10 @@ class ArqenRequestHandler(BaseHTTPRequestHandler):
                 name = str(payload.get("name", "")).strip()
                 raw_steps = payload.get("steps", [])
                 if not name or not isinstance(raw_steps, list) or not raw_steps:
-                    raise ValueError("name och minst ett steg krävs.")
+                    raise ValueError("name and at least one step are required.")
                 steps = tuple(WorkflowStep(str(step.get("name", "")).strip(), str(step.get("prompt", "")).strip(), step.get("agent_id")) for step in raw_steps)
                 if any(not step.name or not step.prompt for step in steps):
-                    raise ValueError("Varje steg måste ha name och prompt.")
+                    raise ValueError("Every step needs a name and a prompt.")
                 workflow = Workflow(uuid.uuid4().hex, name, steps)
                 self.server.mission_store.save_workflow(workflow)
                 self._send_json(HTTPStatus.CREATED, {"data": self._as_json(workflow)})
@@ -243,6 +272,13 @@ class ArqenRequestHandler(BaseHTTPRequestHandler):
                 result = self.server.mission_runner.resume(task_id)
                 self._send_json(HTTPStatus.OK, {"data": {"task_id": task_id, "result": result}})
                 return
+            if path.endswith("/confirmation") and path.startswith("/api/v1/sessions/"):
+                session_id = path.removeprefix("/api/v1/sessions/").removesuffix("/confirmation").strip("/")
+                if not isinstance(payload.get("approve"), bool):
+                    raise ValueError("approve (true or false) is required.")
+                result = self.server.application.confirm(session_id, payload["approve"])
+                self._send_json(HTTPStatus.OK, {"data": self._as_json(result)})
+                return
             if path.endswith("/messages") and path.startswith("/api/v1/sessions/"):
                 session_id = path.removeprefix("/api/v1/sessions/").removesuffix("/messages").strip("/")
                 result = self.server.application.send_message(session_id, str(payload.get("content", "")))
@@ -255,22 +291,22 @@ class ArqenRequestHandler(BaseHTTPRequestHandler):
                 stop_speech()
                 self._send_json(HTTPStatus.OK, {"data": {"status": "stopped"}})
                 return
-            self._error(HTTPStatus.NOT_FOUND, "not_found", "Resursen finns inte.")
+            self._error(HTTPStatus.NOT_FOUND, "not_found", "Not found.")
         except ValueError as exc:
             self._error(HTTPStatus.UNPROCESSABLE_ENTITY, "validation_error", str(exc))
         except FileNotFoundError:
-            self._error(HTTPStatus.NOT_FOUND, "not_found", "Sessionen finns inte.")
+            self._error(HTTPStatus.NOT_FOUND, "not_found", "Not found.")
         except PermissionError as exc:
             self._error(HTTPStatus.UNAUTHORIZED, "unauthorized", str(exc))
         except Exception:
-            self._error(HTTPStatus.INTERNAL_SERVER_ERROR, "internal_error", "Ett internt fel uppstod.")
+            self._error(HTTPStatus.INTERNAL_SERVER_ERROR, "internal_error", "An internal error occurred.")
 
     def do_PATCH(self) -> None:
         path = urlparse(self.path).path.rstrip("/")
         try:
             self._require_auth()
             if not path.startswith("/api/v1/sessions/"):
-                self._error(HTTPStatus.NOT_FOUND, "not_found", "Resursen finns inte.")
+                self._error(HTTPStatus.NOT_FOUND, "not_found", "Not found.")
                 return
             payload = self._read_json()
             result = self.server.application.rename_session(self._session_id(path), str(payload.get("title", "")))
@@ -278,9 +314,9 @@ class ArqenRequestHandler(BaseHTTPRequestHandler):
         except ValueError as exc:
             self._error(HTTPStatus.UNPROCESSABLE_ENTITY, "validation_error", str(exc))
         except FileNotFoundError:
-            self._error(HTTPStatus.NOT_FOUND, "not_found", "Sessionen finns inte.")
+            self._error(HTTPStatus.NOT_FOUND, "not_found", "Not found.")
         except Exception:
-            self._error(HTTPStatus.INTERNAL_SERVER_ERROR, "internal_error", "Ett internt fel uppstod.")
+            self._error(HTTPStatus.INTERNAL_SERVER_ERROR, "internal_error", "An internal error occurred.")
 
     def do_DELETE(self) -> None:
         path = urlparse(self.path).path.rstrip("/")
@@ -289,25 +325,26 @@ class ArqenRequestHandler(BaseHTTPRequestHandler):
             self.server.application.delete_session(self._session_id(path))
             self._send_json(HTTPStatus.OK, {"data": {"status": "deleted"}})
         except FileNotFoundError:
-            self._error(HTTPStatus.NOT_FOUND, "not_found", "Sessionen finns inte.")
+            self._error(HTTPStatus.NOT_FOUND, "not_found", "Not found.")
         except Exception:
-            self._error(HTTPStatus.INTERNAL_SERVER_ERROR, "internal_error", "Ett internt fel uppstod.")
+            self._error(HTTPStatus.INTERNAL_SERVER_ERROR, "internal_error", "An internal error occurred.")
 
     def _require_auth(self) -> None:
         expected = self.server.token
         if not expected:
             return
         authorization = self.headers.get("Authorization", "")
-        if authorization != f"Bearer {expected}":
-            raise PermissionError("Giltig Bearer-token krävs.")
+        # Compared in constant time, so the answer's timing gives nothing away.
+        if not hmac.compare_digest(authorization.encode("utf-8"), f"Bearer {expected}".encode("utf-8")):
+            raise PermissionError("A valid Bearer token is required.")
 
     def _read_json(self) -> dict[str, Any]:
         length = int(self.headers.get("Content-Length", "0"))
         if length <= 0 or length > 1_000_000:
-            raise ValueError("JSON-body saknas eller är för stor.")
+            raise ValueError("The JSON body is missing or too large.")
         payload = json.loads(self.rfile.read(length).decode("utf-8"))
         if not isinstance(payload, dict):
-            raise ValueError("JSON-body måste vara ett objekt.")
+            raise ValueError("The JSON body must be an object.")
         return payload
 
     def _session_id(self, path: str) -> str:
@@ -362,10 +399,16 @@ class ArqenRequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(encoded)
 
     def _send_html(self, html: str) -> None:
-        encoded = html.encode("utf-8")
+        self._send_bytes(html.encode("utf-8"), "text/html; charset=utf-8")
+
+    def _send_bytes(self, encoded: bytes, content_type: str) -> None:
         self.send_response(HTTPStatus.OK)
-        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(encoded)))
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Referrer-Policy", "no-referrer")
         self.send_header("Connection", "close")
         self.end_headers()
         self.wfile.write(encoded)
@@ -387,64 +430,18 @@ class ArqenRequestHandler(BaseHTTPRequestHandler):
         return value
 
 
-def create_server(application: ArqenApplication, host: str = "127.0.0.1", port: int = 8765, token: str = "") -> ArqenHTTPServer:
-    """Create a local API server; call serve_forever() from the host process."""
-    return ArqenHTTPServer((host, port), application, token)
+def create_server(application: ArqenApplication, host: str = "127.0.0.1", port: int = 8765, token: str = "",
+                  run_workers: bool = True) -> ArqenHTTPServer:
+    """Create an API server; call serve_forever() from the host process.
+
+    ``run_workers`` starts the scheduler and task worker; the desktop app,
+    which runs its own, passes False.
+    """
+    return ArqenHTTPServer((host, port), application, token, run_workers)
 
 
-MOBILE_PAGE = r"""<!doctype html>
-<html lang="sv">
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#17191b">
-<title>Arqen</title>
-<style>
-* { box-sizing: border-box; }
-body { margin: 0; background: #17191b; color: #d5d8d3; font: 16px system-ui, sans-serif; }
-main { max-width: 720px; min-height: 100vh; margin: auto; padding: 20px 16px; display: flex; flex-direction: column; gap: 14px; }
-h1 { margin: 0; color: #b7ff18; letter-spacing: .08em; font-size: 1.25rem; }
-input, textarea, button { width: 100%; border: 1px solid #353a3d; border-radius: 8px; background: #202326; color: #eef1eb; padding: 12px; font: inherit; }
-button { background: #b7ff18; color: #111; border: 0; font-weight: 700; }
-textarea { min-height: 90px; resize: vertical; }
-#log { flex: 1; min-height: 280px; white-space: pre-wrap; border: 1px solid #303538; border-radius: 8px; padding: 14px; background: #111315; overflow-wrap: anywhere; }
-.muted { color: #8d9690; font-size: .9rem; }
-</style>
-</head>
-<body><main>
-<h1>ARQEN</h1>
-<div class="muted">Mobiltest // lokal anslutning</div>
-<input id="token" type="password" placeholder="API-token">
-<button id="start">STARTA NY CHATT</button>
-<div id="log">Ange token och starta en chatt.</div>
-<textarea id="message" placeholder="Skriv ett meddelande..."></textarea>
-<button id="send">SKICKA</button>
-</main>
-<script>
-const token = document.querySelector('#token');
-const log = document.querySelector('#log');
-const message = document.querySelector('#message');
-let sessionId = '';
-const headers = () => ({'Authorization': 'Bearer ' + token.value, 'Content-Type': 'application/json'});
-const write = text => { log.textContent += (log.textContent ? '\n\n' : '') + text; log.scrollTop = log.scrollHeight; };
-document.querySelector('#start').onclick = async () => {
-  const response = await fetch('/api/v1/sessions', {method: 'POST', headers: headers(), body: JSON.stringify({title: 'Mobilchatt'})});
-  const body = await response.json();
-  if (!response.ok) { write('Fel: ' + (body.error?.message || response.status)); return; }
-  sessionId = body.data.session_id; log.textContent = 'Ny mobilchatt startad.';
-};
-document.querySelector('#send').onclick = async () => {
-  if (!sessionId) { write('Starta en chatt först.'); return; }
-  const content = message.value.trim(); if (!content) return;
-  write('DU: ' + content); message.value = '';
-  const response = await fetch('/api/v1/sessions/' + sessionId + '/messages', {method: 'POST', headers: headers(), body: JSON.stringify({content})});
-  const body = await response.json();
-  write(response.ok ? 'ARQEN: ' + body.data.assistant_message : 'Fel: ' + (body.error?.message || response.status));
-};
-</script></body></html>"""
-
-
-CONTROL_PAGE = r"""<!doctype html><html lang="sv"><head>
+CONTROL_PAGE = r"""<!doctype html><html lang="en"><head>
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Arqen Control</title>
 <style>*{box-sizing:border-box}body{margin:0;background:#101214;color:#e9eee8;font:16px system-ui,sans-serif}main{max-width:980px;margin:auto;padding:28px 18px}h1{color:#b7ff18;letter-spacing:.1em}input,button{padding:12px;border:1px solid #343b37;border-radius:8px;background:#1d2220;color:#fff;font:inherit}input{width:70%}button{background:#b7ff18;color:#101214;font-weight:700;cursor:pointer}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-top:22px}.card{background:#191d1b;border:1px solid #303832;border-radius:12px;padding:18px}.label{color:#89958c;font-size:.85rem}.value{font-size:1.35rem;margin-top:7px;color:#b7ff18}#message{margin-top:18px;color:#aab5ad}</style></head>
-<body><main><h1>ARQEN CONTROL</h1><p>VPS-status och driftöversikt</p><input id="token" type="password" placeholder="API-token"><button onclick="loadStatus()">ANSLUT</button><div id="message">Ange token för att läsa status.</div><section class="grid" id="grid"></section></main>
-<script>async function loadStatus(){const token=document.getElementById('token').value;try{const r=await fetch('/api/v1/control/status',{headers:{Authorization:'Bearer '+token}});const j=await r.json();if(!r.ok)throw Error(j.error?.message||'Fel');const d=j.data;const rows=[['API',d.api],['Ollama',d.ollama],['Modell',d.model],['RAM använd',d.memory_used],['Disk',d.disk_used_percent+'%'],['Sessioner',d.sessions],['Healthcheck',d.healthcheck],['Telegram',d.telegram],['Backup',d.latest_backup],['Backupålder',d.backup_age],['Senaste kontroll',d.last_health]];document.getElementById('grid').innerHTML=rows.map(x=>'<div class="card"><div class="label">'+x[0]+'</div><div class="value">'+x[1]+'</div></div>').join('');document.getElementById('message').textContent='Senast uppdaterad: '+new Date().toLocaleTimeString()}catch(e){document.getElementById('message').textContent=e.message}}setInterval(()=>{if(document.getElementById('token').value)loadStatus()},30000)</script></body></html>"""
+<body><main><h1>ARQEN CONTROL</h1><p>Server status and operations</p><input id="token" type="password" placeholder="API token"><button onclick="loadStatus()">CONNECT</button><div id="message">Enter the token to read the status.</div><section class="grid" id="grid"></section></main>
+<script>async function loadStatus(){const token=document.getElementById('token').value;try{const r=await fetch('/api/v1/control/status',{headers:{Authorization:'Bearer '+token}});const j=await r.json();if(!r.ok)throw Error(j.error?.message||'Error');const d=j.data;const rows=[['API',d.api],['Ollama',d.ollama],['Model',d.model],['RAM used',d.memory_used],['Disk',d.disk_used_percent+'%'],['Sessions',d.sessions],['Healthcheck',d.healthcheck],['Telegram',d.telegram],['Backup',d.latest_backup],['Backup age',d.backup_age],['Latest check',d.last_health]];document.getElementById('grid').innerHTML=rows.map(x=>'<div class="card"><div class="label">'+x[0]+'</div><div class="value">'+x[1]+'</div></div>').join('');document.getElementById('message').textContent='Last updated: '+new Date().toLocaleTimeString()}catch(e){document.getElementById('message').textContent=e.message}}setInterval(()=>{if(document.getElementById('token').value)loadStatus()},30000)</script></body></html>"""

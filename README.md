@@ -126,18 +126,40 @@ Good to know:
 The core without the window starts with `python -m arqen`. Check a local
 provider with `python -m arqen.doctor`.
 
+## Arqen on your phone
+
+Chat with Arqen, approve its tools and Mission Control's approvals, and follow
+your tasks from your phone's browser, while Arqen runs on your computer.
+
+1. Install [Tailscale](https://tailscale.com) on the computer and the phone
+   and sign in to the same account. Only devices in your own tailnet can then
+   reach Arqen; nothing is opened to the internet.
+2. In Arqen, open **Settings → Mobile** and tick *Let my phone reach Arqen*.
+3. Scan the QR code with the phone's camera and add the page to the home
+   screen.
+
+The QR code holds a token that gives full access to Arqen, so don't share it;
+**NEW TOKEN** signs every phone out. *Local network* works without Tailscale
+for anything on the same Wi-Fi, and *This computer only* is for trying the
+page in a browser. A tool that needs approval shows up as a card with the
+tool's arguments and **Approve** / **Reject**.
+
 ## Local API
 
-The API is a separate process and is not started by the app:
+The phone page talks to Arqen's API. Without the desktop app it can run as
+a process of its own:
 
 ```powershell
 python -m arqen.api --port 8765 --token <your-token>
 ```
 
-It listens on `127.0.0.1` only. The token can also be set with the
-`ARQEN_API_TOKEN` environment variable. Without a token no sign-in is
-required, so always set one if anything but you can reach the machine. Every
-call except `/api/v1/health` then needs `Authorization: Bearer <token>`.
+It listens on `127.0.0.1` unless `--host` says otherwise, and refuses any
+other address without a token. The token can also be set with the
+`ARQEN_API_TOKEN` environment variable; every call except `/api/v1/health`
+then needs `Authorization: Bearer <token>`. When a tool needs approval, a
+message returns `"status": "needs_confirmation"` with the tool and its
+arguments; answer with `POST /api/v1/sessions/{id}/confirmation` and
+`{"approve": true}` or `false`.
 
 Endpoints under `/api/v1` cover sessions and messages, status, tasks, agents,
 approvals, schedules, workflows and tools. See
@@ -163,7 +185,7 @@ python -m pytest -q
 
 Chat, voice, Mission Control, memory with suggestions and reflection, the
 Tool Gateway and the connections (GitHub, Google, Discord, Telegram, MCP) work
-locally. Next up: approvals through the API and a mobile client. The working
+locally, and on your phone through Tailscale. The working
 notes are in [HANDOVER.md](HANDOVER.md) (in Swedish).
 
 > Arqen grew out of an earlier app, Arqen Desktop, which is no longer

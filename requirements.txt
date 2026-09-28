@@ -9,6 +9,7 @@ sounddevice>=0.5,<1
 numpy>=1.24,<3
 faster-whisper>=1.1,<2
 edge-tts>=7,<8
+qrcode>=7.4,<9
 
 # Optional: a local voice for English text while Arqen speaks Swedish.
 # It pulls in PyTorch, a large download, so it is not installed by default:

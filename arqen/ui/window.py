@@ -36,6 +36,7 @@ from PyQt6.QtGui import (
     QColor,
     QFont,
     QFontMetricsF,
+    QImage,
     QPainter,
     QPalette,
     QPen,
@@ -71,6 +72,7 @@ from arqen.config.paths import APP_ROOT, config_dir, workspace_root
 from arqen.providers.config import ProviderConfig
 from arqen.providers.factory import create_provider
 from arqen.tools.builtins import create_builtin_registry
+from arqen.api import mobile
 from arqen.ui import strings
 from arqen.ui.strings import status_label, tr, tr_status
 from arqen.ui.tool_catalog import CATEGORIES, ToolInfo, tool_info
@@ -2674,6 +2676,9 @@ class ArqenWindow(QMainWindow):
         self.scheduler_worker.start()
         self.task_worker = TaskWorker(self.mission_store, self.mission_runner)
         self.task_worker.start()
+        self.mobile_server = mobile.MobileServer(self._mobile_application)
+        if mobile.load_settings().enabled:
+            QTimer.singleShot(0, lambda: self.mobile_server.start(mobile.load_settings()))
         dock = QDockWidget(tr("MISSION CONTROL"), self)
         dock.setObjectName("missionControlDock")
         panel = QWidget()
@@ -3728,6 +3733,8 @@ class ArqenWindow(QMainWindow):
             self.scheduler_worker.stop()
         if hasattr(self, "task_worker"):
             self.task_worker.stop()
+        if hasattr(self, "mobile_server"):
+            self.mobile_server.stop()
         for attribute, key in self._DOCK_GEOMETRY_KEYS.items():
             dock = getattr(self, attribute, None)
             if dock is not None and dock.isFloating():
@@ -4381,6 +4388,7 @@ class ArqenWindow(QMainWindow):
         provider_tab = QWidget()
         workspace_tab = QWidget()
         language_tab = QWidget()
+        mobile_tab = QWidget()
         fallback_tab = QWidget()
         stats_tab = QWidget()
         profile_form = QFormLayout(profile_tab)
@@ -4398,6 +4406,7 @@ class ArqenWindow(QMainWindow):
         tabs.addTab(provider_tab, tr("Provider"))
         tabs.addTab(workspace_tab, tr("Workspace"))
         tabs.addTab(language_tab, tr("Language"))
+        tabs.addTab(mobile_tab, tr("Mobile"))
         tabs.addTab(fallback_tab, tr("Fallback"))
         tabs.addTab(stats_tab, tr("Statistics"))
         dialog_layout.addWidget(tabs, 1)
@@ -4523,6 +4532,8 @@ class ArqenWindow(QMainWindow):
         language_hint = QLabel(tr("Arqen's language: menus, buttons and texts. Takes effect when Arqen restarts."))
         language_hint.setWordWrap(True)
         language_form.addRow(tr("About"), language_hint)
+
+        self._build_mobile_tab(mobile_tab)
 
         refresh_models = QPushButton(tr("FETCH MODELS"))
         refresh_models.setObjectName("secondaryButton")
@@ -4672,6 +4683,132 @@ class ArqenWindow(QMainWindow):
                 self._offer_restart_for_language()
         except (ValueError, TypeError) as exc:
             QMessageBox.warning(dialog, tr("Invalid settings"), str(exc))
+
+    def _mobile_application(self):
+        """What the phone talks to: chats with the chat's own tools, as in this window."""
+        from arqen.application.service import ArqenApplication
+
+        def chat_engine() -> ConversationEngine:
+            engine = ConversationEngine(provider=create_provider(load_provider_config()), tools=create_builtin_registry())
+            chat_tools.apply_chat_tool_limits(engine)
+            return engine
+
+        return ArqenApplication(chat_engine)
+
+    def _build_mobile_tab(self, tab: QWidget) -> None:
+        settings = mobile.load_settings()
+        layout = QVBoxLayout(tab)
+        layout.setContentsMargins(10, 12, 10, 12)
+        layout.setSpacing(12)
+        enabled = QCheckBox(tr("Let my phone reach Arqen"))
+        enabled.setChecked(settings.enabled)
+        layout.addWidget(enabled)
+        form = QFormLayout()
+        form.setHorizontalSpacing(18)
+        network = QComboBox()
+        for label, value in ((tr("Tailscale (recommended)"), "tailscale"), (tr("Local network"), "lan"), (tr("This computer only"), "local")):
+            network.addItem(label, value)
+        network.setCurrentIndex(max(0, network.findData(settings.network)))
+        form.addRow(tr("Network"), network)
+        port = QLineEdit(str(settings.port))
+        port.setMaximumWidth(120)
+        form.addRow(tr("Port"), port)
+        layout.addLayout(form)
+        state = QLabel()
+        state.setWordWrap(True)
+        state.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        layout.addWidget(state)
+        code = QLabel()
+        code.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        layout.addWidget(code)
+        buttons = QHBoxLayout()
+        copy_link = QPushButton(tr("COPY LINK"))
+        renew = QPushButton(tr("NEW TOKEN"))
+        for button in (copy_link, renew):
+            button.setObjectName("secondaryButton")
+            button.setAutoDefault(False)
+            buttons.addWidget(button)
+        buttons.addStretch(1)
+        layout.addLayout(buttons)
+        hint = QLabel(tr(
+            "Scan the code with your phone's camera and add the page to your home screen. "
+            "The code holds a token that gives full access to Arqen: do not share it. "
+            "With Tailscale only devices in your own tailnet can connect; install Tailscale on the phone too."
+        ))
+        hint.setWordWrap(True)
+        hint.setStyleSheet("color: #8d969d;")
+        layout.addWidget(hint)
+        layout.addStretch(1)
+
+        def refresh() -> None:
+            server = self.mobile_server
+            running = server.running
+            copy_link.setEnabled(running)
+            if running:
+                state.setText(tr("On. Open {url} on your phone.", url=server.url()))
+                state.setStyleSheet("color: #b7ff18;")
+                code.setPixmap(self._qr_pixmap(server.url(with_token=True)))
+            else:
+                state.setText(tr("Could not start: {error}", error=tr(server.error)) if server.error else tr("Off."))
+                state.setStyleSheet("color: #ff9f1c;" if server.error else "color: #8d969d;")
+                code.clear()
+
+        def apply() -> None:
+            # Changes take effect at once, like a switch; SAVE is not needed.
+            try:
+                chosen = mobile.MobileSettings(enabled.isChecked(), network.currentData(), int(port.text()))
+                mobile.save_settings(chosen)
+            except ValueError as exc:
+                QMessageBox.warning(tab, tr("Mobile"), str(exc))
+                return
+            if chosen.enabled:
+                self.mobile_server.start(chosen)
+            else:
+                self.mobile_server.stop()
+                self.mobile_server.error = ""
+            refresh()
+
+        def renew_token() -> None:
+            answer = QMessageBox.question(
+                tab, tr("NEW TOKEN"),
+                tr("Phones signed in with the current token will have to scan the new code. Continue?"),
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+            if answer != QMessageBox.StandardButton.Yes:
+                return
+            mobile.new_token()
+            if self.mobile_server.running:
+                self.mobile_server.start(mobile.load_settings())
+            refresh()
+
+        enabled.toggled.connect(lambda _: apply())
+        network.currentIndexChanged.connect(lambda _: apply() if enabled.isChecked() else None)
+        port.editingFinished.connect(lambda: apply() if enabled.isChecked() else None)
+        copy_link.clicked.connect(lambda: QApplication.clipboard().setText(self.mobile_server.url(with_token=True)))
+        renew.clicked.connect(renew_token)
+        refresh()
+
+    @staticmethod
+    def _qr_pixmap(text: str, scale: int = 5) -> QPixmap:
+        """``text`` as a QR code, dark on white so every phone camera reads it."""
+        import qrcode
+
+        code = qrcode.QRCode(border=3, error_correction=qrcode.constants.ERROR_CORRECT_M)
+        code.add_data(text)
+        code.make(fit=True)
+        matrix = code.get_matrix()
+        size = len(matrix) * scale
+        image = QImage(size, size, QImage.Format.Format_RGB32)
+        image.fill(QColor("#ffffff"))
+        painter = QPainter(image)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor("#000000"))
+        for y, row in enumerate(matrix):
+            for x, dark in enumerate(row):
+                if dark:
+                    painter.drawRect(x * scale, y * scale, scale, scale)
+        painter.end()
+        return QPixmap.fromImage(image)
 
     def _offer_restart_for_language(self) -> None:
         # The UI builds its texts once, so a new language needs a fresh start.

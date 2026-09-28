@@ -79,13 +79,24 @@ Rättat 2026-09-25:
 - Arbetsflödesrutterna (lista, skapa, köra, återuppta) gav alltid 500 eftersom
   de läste attribut som bara finns på servern. De fungerar nu.
 
-Kvar att göra:
+Klart 2026-09-28 (se HANDOVER → Mobilstöd):
 
-- API:t kräver bara token om en är satt (`--token` eller `ARQEN_API_TOKEN`);
-  standard är ingen token.
-- Bekräftelseflödet för verktyg via klienten och själva mobilklienten återstår.
-- API-servern kör en egen scheduler och task-worker mot samma databas som
-  desktop-appen; tasks claimas så att samma task inte körs två gånger.
+- Mobilklienten på `/`: chattar, verktygsgodkännanden, Kontrollrummets
+  godkännanden och uppgifter, på användarens språk, med manifest för
+  hemskärmen (`/manifest.webmanifest`, `/icon.svg`).
+- Bekräftelseflödet: `POST /sessions/{id}/messages` svarar
+  `status: "needs_confirmation"` med `confirmation: {tool, arguments}`;
+  `GET /sessions/{id}` har samma fält; `POST /sessions/{id}/confirmation`
+  med `{"approve": true|false}` kör eller avbryter verktyget och låter Arqen
+  avsluta turen.
+- Appen startar API:t själv (Inställningar → Mobil) utan egen scheduler och
+  task-worker (`run_workers=False`). Körs API:t fristående
+  (`python -m arqen.api`) startar det dem, och tasks claimas så att samma task
+  inte körs två gånger.
+- Servern vägrar lyssna på annat än loopback utan token; felmeddelanden är på
+  engelska.
+
+Kvar vid behov: strömmade svar till telefonen, röst i telefonen och push-aviseringar.
 
 ## Exempel: skicka meddelande
 

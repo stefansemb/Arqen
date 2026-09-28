@@ -17,6 +17,11 @@ class ToolExecutor:
         self.forced_confirmation = forced_confirmation or set()
         self._pending: tuple[str, dict[str, Any]] | None = None
 
+    @property
+    def pending(self) -> tuple[str, dict[str, Any]] | None:
+        """The tool and arguments waiting for the user's confirmation, if any."""
+        return self._pending
+
     def execute(self, name: str, arguments: dict[str, Any] | None = None) -> ExecutionResult:
         tool = self.registry.get(name)
         if tool is None:
