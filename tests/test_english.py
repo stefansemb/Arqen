@@ -91,3 +91,25 @@ def test_the_voice_follows_the_language():
     assert speech.EDGE_VOICES["sv"] == "sv-SE-MattiasNeural"
     assert speech.EDGE_VOICES["en"].startswith("en-")
     assert set(speech.EDGE_VOICES) == set(strings.LANGUAGES)
+
+
+def test_a_failed_kokoro_falls_back_to_the_edge_voice(monkeypatch):
+    # In Swedish, English text goes to Kokoro first; when that fails it used
+    # to report a fallback and read nothing.
+    spoken = []
+
+    def failing_kokoro(text, reset=True):
+        speech._kokoro_last_error = "model missing"
+        speech._speech_done.set()
+        return True
+
+    def edge(text, reset=True):
+        spoken.append(text)
+        speech._speech_done.set()
+        return True
+
+    monkeypatch.setattr(speech, "_speak_kokoro", failing_kokoro)
+    monkeypatch.setattr(speech, "_speak_edge", edge)
+    result = speech.SpeakTextTool().run({"text": "Hello, this is what you asked for."})
+    assert spoken == ["Hello, this is what you asked for."]
+    assert result.startswith("Kokoro failed (model missing); Speech started with the neural voice")

@@ -311,7 +311,7 @@ Faser:
 
 ## Teststatus
 
-256 tester, alla gröna. Kör efter ändringar:
+257 tester, alla gröna. Kör efter ändringar:
 
 ```powershell
 python -m compileall -q arqen

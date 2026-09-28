@@ -184,7 +184,6 @@ class ConversationEngine:
             self.messages.append(Message(role="assistant", content=document_response))
             self._save_session()
             return document_response
-        self._add_desktop_context()
         self.messages.append(Message(role="user", content=prompt))
         # Persist the user's turn before any provider call.  A provider error
         # must not make the latest prompt disappear from the session.
@@ -348,11 +347,6 @@ class ConversationEngine:
         self.messages = list(self.session.messages)
         return self.session
 
-    def _add_desktop_context(self) -> None:
-        active_window = self.tools.get("active_window")
-        if active_window is None:
-            return
-
     # The chat commands answer in both languages, whichever the UI shows.
     _REMEMBER = ("kom ihåg att ", "remember that ")
     _FORGET = ("glöm att ", "forget that ")
@@ -471,19 +465,6 @@ class ConversationEngine:
             Message(role="user", content=f"Document 1: {paths[0]}\n{contents[0]}\n\nDocument 2: {paths[1]}\n{contents[1]}"),
         ]
         return self.provider.respond(messages).content
-        try:
-            context = active_window.run({})
-            system_message = self.messages[0]
-            self.messages[0] = Message(
-                role="system",
-                content=(
-                    system_message.content
-                    + f"\n\nCurrent desktop context: {context}"
-                ),
-            )
-        except Exception:
-            # Context is helpful, but must never prevent normal conversation.
-            return
 
     def _direct_safe_command(self, prompt: str) -> ToolRequest | None:
         """Handle explicit, read-only diagnostics without model formatting risk."""

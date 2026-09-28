@@ -386,11 +386,14 @@ class SpeakTextTool(Tool):
         speech_text = _speech_clean(text)
         # Kokoro reads English text aloud while Arqen speaks Swedish; in English
         # the Edge voice already does, and one voice throughout sounds right.
+        note = ""
         if strings.LANGUAGE == "sv" and _looks_english(speech_text) and _speak_kokoro(speech_text):
             _speech_done.wait()
             if _kokoro_last_error is None:
                 return "Speech started with Kokoro English voice."
-            return f"Kokoro failed: {_kokoro_last_error}. Falling back to Edge TTS."
+            # Kokoro failed (its model may not load): the Edge voice reads it
+            # instead.  This used to say so and then read nothing.
+            note = f"Kokoro failed ({_kokoro_last_error}); "
         fragments = [chunk.strip() for chunk in re.split(r"(?<=[.!?])\s+|\n+", speech_text) if chunk.strip()]
         chunks: list[str] = []
         current = ""
@@ -412,8 +415,8 @@ class SpeakTextTool(Tool):
                     if _speech_cancelled:
                         return "Speech stopped."
             else:
-                return f"Speech started with the neural voice {EDGE_VOICES[strings.LANGUAGE]}."
+                return f"{note}Speech started with the neural voice {EDGE_VOICES[strings.LANGUAGE]}."
         if _speak_edge(speech_text):
             _speech_done.wait()
-            return f"Speech started with the neural voice {EDGE_VOICES[strings.LANGUAGE]}."
-        return "Neural speech is not available right now. No fallback voice was started."
+            return f"{note}Speech started with the neural voice {EDGE_VOICES[strings.LANGUAGE]}."
+        return f"{note}Neural speech is not available right now. No fallback voice was started."
