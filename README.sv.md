@@ -11,9 +11,8 @@ Arqen är byggt för att vara lokalt, kontrollerbart och utbyggbart. Molnmodelle
 är valfria; lokal körning via Ollama eller LM Studio fungerar som grund. Allt som
 inte går att ångra kräver ditt godkännande.
 
-> Repot heter Arqen-Desktop av historiska skäl. Den gamla desktopversionen
-> utvecklas inte längre; dess sista version finns kvar som taggen
-> `arqen-desktop-legacy`.
+> Arqen växte fram ur en tidigare app, Arqen Desktop, som inte utvecklas
+> längre; dess sista version finns kvar som taggen `arqen-desktop-legacy`.
 
 ## Funktioner
 

@@ -6,7 +6,8 @@ Arqen är en PyQt6-baserad lokal AI-assistent och operatörsgränssnitt för age
 med mörkgrå/limegrön design och helt svenskt gränssnitt. Kärnan är stabil:
 molnmodeller streamar, anropar verktyg nativt och går att avbryta mitt i.
 
-Repot ligger på `https://github.com/stefansemb/Arqen-Desktop`, gren `main`, och
+Repot ligger på `https://github.com/stefansemb/Arqen` (hette `Arqen-Desktop`
+fram till 2026-09-28; GitHub vidarebefordrar den gamla adressen), gren `main`, och
 arbetet sker direkt i `main`. Sedan 2026-09-25 är `main` Mission Control-linjen
 (i gränssnittet kallad **Kontrollrum**). Gamla Arqen Desktop är pensionerad och
 utvecklas inte vidare; sista versionen finns kvar som taggen

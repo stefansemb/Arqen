@@ -3,7 +3,7 @@ from typing import Any
 from arqen.connectors.github import github
 from arqen.tools.base import Tool
 
-_REPO_HELP = "Repository as owner/name, e.g. stefansemb/Arqen-Desktop."
+_REPO_HELP = "Repository as owner/name, e.g. stefansemb/Arqen."
 
 
 def _repo(arguments: dict[str, Any]) -> str:

@@ -89,8 +89,8 @@ Arqen is built for **Windows** and needs **Python 3.10 or later** (developed on
 3.12).
 
 ```powershell
-git clone https://github.com/stefansemb/Arqen-Desktop.git
-cd Arqen-Desktop
+git clone https://github.com/stefansemb/Arqen.git
+cd Arqen
 python -m pip install -r requirements.txt
 python -m playwright install chromium
 python -m arqen.ui
@@ -166,9 +166,8 @@ Tool Gateway and the connections (GitHub, Google, Discord, Telegram, MCP) work
 locally. Next up: approvals through the API and a mobile client. The working
 notes are in [HANDOVER.md](HANDOVER.md) (in Swedish).
 
-> The repository is called Arqen-Desktop for historical reasons. The old
-> desktop version is no longer developed; its last release is kept as the tag
-> `arqen-desktop-legacy`.
+> Arqen grew out of an earlier app, Arqen Desktop, which is no longer
+> developed; its last release is kept as the tag `arqen-desktop-legacy`.
 
 ## License
 
