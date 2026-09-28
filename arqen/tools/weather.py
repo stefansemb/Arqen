@@ -31,17 +31,17 @@ class WeatherForecastTool(Tool):
             if time.date() == now.date() and 18 <= time.hour <= 23:
                 candidates.append(index)
         if not candidates:
-            return "Jag hittade ingen timprognos för Göteborg i kväll."
+            return "No hourly forecast was found for Gothenburg this evening."
         values = candidates
         temps = [hourly["temperature_2m"][i] for i in values]
         rain = max(hourly["precipitation_probability"][i] or 0 for i in values)
         wind = max(hourly["wind_speed_10m"][i] or 0 for i in values)
         codes = [hourly["weather_code"][i] for i in values]
-        description = "klart eller delvis klart" if max(codes) <= 3 else "varierande väder"
+        description = "clear or partly clear" if max(codes) <= 3 else "changeable weather"
         if any(code >= 51 for code in codes):
-            description = "risk för regn"
+            description = "a chance of rain"
         return (
-            f"Göteborg i kväll: {description}. Temperatur cirka {min(temps):.0f}–{max(temps):.0f} °C, "
-            f"regnrisk upp till {rain:.0f} % och vind upp till {wind:.0f} km/h. "
-            "Källa: Open-Meteo."
+            f"Gothenburg this evening: {description}. Temperature about {min(temps):.0f}–{max(temps):.0f} °C, "
+            f"chance of rain up to {rain:.0f} % and wind up to {wind:.0f} km/h. "
+            "Source: Open-Meteo."
         )

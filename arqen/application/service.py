@@ -43,7 +43,7 @@ class ArqenApplication:
         self._engine_factory = engine_factory
         self._engines: dict[str, ConversationEngine] = {}
 
-    def create_session(self, title: str = "Ny chatt") -> SessionSummary:
+    def create_session(self, title: str = "New chat") -> SessionSummary:
         session = self.session_store.create(title)
         self.session_store.save(session)
         self._engines[session.session_id] = self._new_engine(session)

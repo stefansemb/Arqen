@@ -13,7 +13,7 @@ from __future__ import annotations
 
 # The languages the UI can show, by code, each named in its own language.
 LANGUAGES = {"sv": "Svenska", "en": "English"}
-DEFAULT_LANGUAGE = "sv"
+DEFAULT_LANGUAGE = "en"
 LANGUAGE = DEFAULT_LANGUAGE
 
 
@@ -22,6 +22,11 @@ def set_language(code: str) -> str:
     global LANGUAGE
     LANGUAGE = code if code in LANGUAGES else DEFAULT_LANGUAGE
     return LANGUAGE
+
+
+def language_name() -> str:
+    """The current language named in English, for instructions to the model."""
+    return {"sv": "Swedish", "en": "English"}[LANGUAGE]
 
 
 _SV: dict[str, str] = {
@@ -269,6 +274,16 @@ _SV: dict[str, str] = {
     "Task started": "Uppgift startad",
     "Task completed": "Uppgift klar",
     "Task timed out after 15 minutes.": "Uppgiften avbröts efter 15 minuter.",
+    "Task is waiting for approval.": "Uppgiften väntar på godkännande.",
+    "Task cancelled after the rejection.": "Uppgiften avbröts efter avslaget.",
+    "Task recovered after a timeout.": "Uppgiften återställdes efter en timeout.",
+    # Mission errors
+    "The task is not waiting for an approval.": "Uppgiften väntar inte på något godkännande.",
+    "The approval is still waiting for a decision.": "Godkännandet väntar fortfarande på beslut.",
+    "The agent '{name}' does not exist.": "Agenten '{name}' finns inte.",
+    "The agent '{name}' is inactive.": "Agenten '{name}' är inaktiv.",
+    "No runtime is configured for the agent '{name}'.": "Ingen körmiljö är konfigurerad för agenten '{name}'.",
+    "The workflow run cannot be resumed.": "Arbetsflödet kan inte återupptas.",
     # Workflows
     "WORKFLOWS": "ARBETSFLÖDEN",
     "Build and run multi-agent pipelines.": "Bygg och kör flöden med flera agenter.",
@@ -546,6 +561,27 @@ _SV: dict[str, str] = {
     "Write something to the bot in Telegram and press FETCH CHAT ID, or get your id from @userinfobot.":
         "Skriv något till boten i Telegram och tryck HÄMTA CHATT-ID, eller hämta ditt id via @userinfobot.",
     "Bearer token if the server requires one": "Bearer-token om servern kräver det",
+    # Chat engine replies (arqen/core/engine.py)
+    "Voice mode on.": "Röstläge aktiverat.",
+    "Voice mode off.": "Röstläge avstängt.",
+    "Voice mode is off. Turn on 🔊 to have text read aloud.": "Röstläge är avstängt. Slå på 🔊 för att använda uppläsning.",
+    "I need your confirmation before I run the tool '{name}'.": "Jag behöver din bekräftelse innan jag kör verktyget '{name}'.",
+    "Cancelled.": "Avbrutet.",
+    "I could not get any further.": "Jag kom inte vidare.",
+    "Saved to memory: {fact}": "Jag har sparat i minnet: {fact}",
+    "My memory is empty.": "Mitt minne är tomt.",
+    "I remember:": "Jag minns:",
+    "I have forgotten: {fact}": "Jag har glömt: {fact}",
+    "I had not saved: {fact}": "Jag hade inte sparat: {fact}",
+    "I need your confirmation before I export the chat to '{path}'.": "Jag behöver din bekräftelse innan jag exporterar chatten till '{path}'.",
+    "There is no earlier tool result to summarise.": "Det finns inget tidigare verktygssvar att sammanfatta.",
+    "Give a result number, for example: summarize result 3": "Ange ett resultatnummer, exempelvis: sammanfatta resultat 3",
+    "That result number is not in the latest search.": "Det resultatnumret finns inte i den senaste sökningen.",
+    # Command line (python -m arqen)
+    "Configuration error: {error}": "Konfigurationsfel: {error}",
+    "Arqen Desktop demo. Type 'quit' to exit.": "Arqen Desktop demo. Skriv 'quit' för att avsluta.",
+    "You": "Du",
+    "Arqen could not answer: {error}": "Arqen kunde inte svara: {error}",
 }
 
 # Task, run and event states are stored in English; these are their labels.

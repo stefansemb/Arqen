@@ -47,14 +47,19 @@ def test_english_shows_the_source_text():
         assert tr("Delete '{title}'?", title="Test") == "Delete 'Test'?"
         assert status_label("waiting_approval") == "WAITING APPROVAL"
     finally:
-        strings.set_language(strings.DEFAULT_LANGUAGE)
+        strings.set_language("sv")
 
 
-def test_unknown_language_falls_back_to_swedish():
+def test_english_is_the_default_language():
+    from arqen.config.settings import load_language
     from arqen.ui import strings
 
-    assert strings.set_language("xx") == "sv"
-    assert tr("Tasks") == "Uppgifter"
+    assert strings.DEFAULT_LANGUAGE == "en"
+    # A new installation has no saved choice and gets the default.
+    assert load_language() == ""
+    assert strings.set_language(load_language()) == "en"
+    assert strings.set_language("xx") == "en"
+    assert tr("Tasks") == "Tasks"
 
 
 def test_language_is_saved_next_to_other_settings(tmp_path):
@@ -81,4 +86,4 @@ def test_a_count_of_one_is_singular():
         assert tr("{count} require approval", count=1) == "1 requires approval"
         assert tr("{count} tools", count=3) == "3 tools"
     finally:
-        strings.set_language(strings.DEFAULT_LANGUAGE)
+        strings.set_language("sv")

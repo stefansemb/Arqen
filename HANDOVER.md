@@ -310,7 +310,7 @@ Faser:
 
 ## Teststatus
 
-236 tester, alla gröna. Kör efter ändringar:
+246 tester, alla gröna. Kör efter ändringar:
 
 ```powershell
 python -m compileall -q arqen
@@ -330,7 +330,8 @@ det HUD-material som användes för att testa mimo-v2.6-pro.
 
 ## Röst
 
-Primär röst är Edge TTS med svensk neural röst `sv-SE-MattiasNeural`. Den
+Primär röst är Edge TTS med neural röst efter språk: `en-GB-RyanNeural` eller
+`sv-SE-MattiasNeural` (se Språk). Den
 automatiska eSpeak/System.Speech-reserven är borttagen eftersom den gav oönskad
 robotklang. Framtida fallback ska vara en explicit, naturlig lokal neural röst
 och inte starta tyst.
@@ -361,28 +362,45 @@ svaret (tid, tokens, kostnad) och totalen som en rad under.
 
 ## Språk
 
-Gränssnittet finns på svenska (standard) och engelska. Språket väljs i
-Inställningar → Språk, sparas i `arqen.json` (`"language": "sv"` / `"en"`) och
-sätts med `set_language` i `arqen/ui/__main__.py` innan fönstret byggs. Byte
-kräver omstart; Arqen erbjuder att starta om direkt. Alla texter går via
-`tr()` i `arqen/ui/strings.py`: koden behåller engelska källsträngar som nycklar
-och tabellen ger den svenska texten, så engelska behöver ingen tabell. Vid
-antal 1 används singularformer ur `_ONE` ("1 uppgift", "1 tool").
-Verktygskatalogen (`tool_catalog.py`) har namn och sammanfattning på båda
-språken sida vid sida; kategorierna är engelska nycklar som visas via `tr()`.
-Anslutningarnas texter (`arqen/connectors/`) är engelska och översätts när de
-visas.
+Arqen finns på engelska (standard sedan 2026-09-28, för en bredare publik) och
+svenska. Språket väljs i Inställningar → Språk, sparas i `arqen.json`
+(`"language": "en"` / `"sv"`; saknas nyckeln blir det engelska) och sätts med
+`set_language` innan något byggs: i `arqen/ui/__main__.py`, i kommandoraden
+(`arqen/__main__.py`) och i API:t (`arqen/api/__main__.py`). Byte kräver
+omstart; Arqen erbjuder att starta om direkt.
 
-Kvar för en helt engelsk Arqen (steg 2): motorn (`engine.py`: systemprompten
-säger "Answer in Swedish", sammanfattningsprompter och fasta svar som
-"kom ihåg att …"), rösten (`sv-SE-MattiasNeural`, Whisper-prompten i
-`microphone.py`), reflektionsprompten, felmeddelanden i `arqen/mission/`,
-vädret och mobil-API:ts sidor. Ordmatchningen i minnet och verktygsvalet är
-byggd för svenska böjningar och behöver engelska vid sidan av. Status för tasks och events sparas på
-engelska i databasen och översätts först när de visas (`status_label`), så
-lagring, tester och logik är språkneutrala. Kod, loggar och tester är på
-engelska. Ny text i UI:t ska läggas in i tabellen i stället för att skrivas
-direkt i `window.py`.
+- **Gränssnittet:** alla texter går via `tr()` i `arqen/ui/strings.py`. Koden
+  har engelska källsträngar och tabellen `_SV` ger svenskan, så engelska
+  behöver ingen tabell. Vid antal 1 används singularformer ur `_ONE`
+  ("1 uppgift", "1 tool"). Verktygskatalogen (`tool_catalog.py`) har namn på
+  båda språken sida vid sida; kategorierna är engelska nycklar.
+- **Modellen:** systemprompten säger "Answer in {språk} by default"
+  (`language_name()`), och sammanfattnings-, jämförelse- och reflektionsprompter
+  ber om samma språk. Verktygens beskrivningar och svar till modellen är på
+  engelska; modellen svarar användaren på valt språk.
+- **Chattkommandon** fungerar på båda språken oavsett val: "kom ihåg att …" /
+  "remember that …", "glöm att …" / "forget that …", "vad minns du" /
+  "what do you remember", "exportera chatten som …" / "export the chat as …",
+  "sammanfatta <fil>" / "summarize <fil>", "jämför a.pdf med b.pdf" /
+  "compare a.pdf with b.pdf". Sammanfatta och jämför tar bara dokument
+  (.txt, .md, .pdf, .docx, .xlsx); "summarize our plan" går till modellen.
+  Tidigare kraschade "sammanfatta <fil>" alltid (läsningen låg oåtkomlig).
+- **Rösten:** Edge TTS med `EDGE_VOICES` i `arqen/tools/speech.py`:
+  `en-GB-RyanNeural` och `sv-SE-MattiasNeural`. Grader läses som "13 degrees
+  Celsius" / "13 grader". "Arqen" skrivs om till "Arkén" bara för den svenska
+  rösten. Whisper får språk och prompt ur `_WHISPER_PROMPTS` i `microphone.py`.
+- **Lagrat:** nya chattar heter "New chat" i lagringen och visas översatt;
+  gamla "Ny chatt" känns igen (`UNTITLED`). Status, händelser och
+  uppgiftsmeddelanden sparas på engelska och översätts när de visas.
+- **Tester:** `tests/conftest.py` kör testerna på svenska (de flesta kollar
+  svenska texter); engelska testas i `tests/test_english.py`.
+
+Kvar på svenska: nyckelordsgenvägarna i `_direct_safe_command` (bara för
+lokala modeller utan nativa verktyg), mobil-API:ts sidor i
+`arqen/api/server.py` och dokumentationen (README, HANDOVER m.fl.).
+
+Kod, loggar och tester är på engelska. Ny text i UI:t skrivs på engelska och
+får en svensk rad i `_SV`, i stället för att skrivas direkt i `window.py`.
 
 ## Mobilstöd
 

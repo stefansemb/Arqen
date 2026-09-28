@@ -21,7 +21,7 @@ def test_engine_confirmation_pauses_and_resume_completes(tmp_path):
     engine = ConfirmationEngine()
     runner = MissionRunner(store, lambda: engine)
 
-    assert runner.run(task.id) == "Task väntar på godkännande."
+    assert runner.run(task.id) == "Task is waiting for approval."
     assert store.get_task(task.id).status == "waiting_approval"
     approval = store.list_approvals()[0]
     assert approval.action == "publish"

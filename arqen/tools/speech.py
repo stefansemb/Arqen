@@ -139,19 +139,23 @@ _DEGREES = re.compile(r"(?P<number>[-−]?\d+(?:[.,]\d+)?)?\s*(?:°\s*(?P<unit>[
 
 
 def _speak_degrees(text: str) -> str:
-    """Say "13 grader" for ``13 °C``.
+    """Say "13 grader" (or "13 degrees") for ``13 °C``.
 
     ``°`` is a symbol character and the cleanup below strips symbols, which
     left the voice reading a bare "C".  Celsius is the default in Swedish
-    speech, so only Fahrenheit is named.
+    speech, so only Fahrenheit is named; in English both are.
     """
+    english = strings.LANGUAGE == "en"
 
     def spoken(match: re.Match) -> str:
         number = (match.group("number") or "").replace("−", "-")
-        word = "grad" if number.lstrip("-") in {"1", "1,0", "1.0"} else "grader"
+        one = number.lstrip("-") in {"1", "1,0", "1.0"}
+        word = ("degree" if one else "degrees") if english else ("grad" if one else "grader")
         fahrenheit = match.group("unit") == "F" or match.group("fahrenheit")
+        celsius = match.group("unit") == "C" or match.group("celsius")
+        unit = " Fahrenheit" if fahrenheit else " Celsius" if english and celsius else ""
         prefix = f"{number} " if number else " "
-        return f"{prefix}{word}{' Fahrenheit' if fahrenheit else ''}"
+        return f"{prefix}{word}{unit}"
 
     return _DEGREES.sub(spoken, text)
 
@@ -273,6 +277,10 @@ from pathlib import Path
 from typing import Any
 
 from arqen.tools.base import Tool
+from arqen.ui import strings
+
+# The Edge neural voice for each UI language.
+EDGE_VOICES = {"sv": "sv-SE-MattiasNeural", "en": "en-GB-RyanNeural"}
 
 
 def _speak_edge(text: str, reset: bool = True) -> bool:
@@ -290,6 +298,8 @@ def _speak_edge(text: str, reset: bool = True) -> bool:
     with _speech_lock:
         generation = _speech_generation
 
+    voice = EDGE_VOICES[strings.LANGUAGE]
+
     def worker() -> None:
         global _current_alias, _current_process, _edge_loop, _edge_task
         audio_path = str(Path(tempfile.gettempdir()) / f"arqen_tts_{uuid.uuid4().hex}.mp3")
@@ -297,7 +307,7 @@ def _speak_edge(text: str, reset: bool = True) -> bool:
             loop = asyncio.new_event_loop()
             _edge_loop = loop
             _edge_task = loop.create_task(
-                edge_tts.Communicate(text, voice="sv-SE-MattiasNeural").save(audio_path)
+                edge_tts.Communicate(text, voice=voice).save(audio_path)
             )
             try:
                 loop.run_until_complete(_edge_task)
@@ -370,7 +380,10 @@ class SpeakTextTool(Tool):
         text = arguments["text"].strip()
         if not text:
             return "No text supplied for speech."
-        speech_text = _speech_clean(re.sub(r"arqen", "Arkén", text, flags=re.IGNORECASE))
+        # Spelled so the Swedish voice says it right; the English one reads "Arqen" well.
+        if strings.LANGUAGE == "sv":
+            text = re.sub(r"arqen", "Arkén", text, flags=re.IGNORECASE)
+        speech_text = _speech_clean(text)
         if _looks_english(speech_text) and _speak_kokoro(speech_text):
             _speech_done.wait()
             if _kokoro_last_error is None:
@@ -397,8 +410,8 @@ class SpeakTextTool(Tool):
                     if _speech_cancelled:
                         return "Speech stopped."
             else:
-                return "Speech started with Swedish neural voice."
+                return f"Speech started with the neural voice {EDGE_VOICES[strings.LANGUAGE]}."
         if _speak_edge(speech_text):
             _speech_done.wait()
-            return "Speech started with Swedish neural voice."
-        return "Svensk neural uppläsning är inte tillgänglig just nu. Ingen reservröst startades."
+            return f"Speech started with the neural voice {EDGE_VOICES[strings.LANGUAGE]}."
+        return "Neural speech is not available right now. No fallback voice was started."

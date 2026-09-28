@@ -9,12 +9,34 @@ from arqen.tools.executor import ToolExecutor
 from arqen.tools.gateway import ToolGateway
 from arqen.tools.registry import ToolRegistry
 from arqen.tools.schema import build_relevant_tool_schemas
-from arqen.core.session_store import ChatSession, SessionStore
+from arqen.core.session_store import DEFAULT_TITLE, UNTITLED, ChatSession, SessionStore
 from arqen.core.memory_store import MemoryStore
+from arqen.ui.strings import language_name, tr
 from collections.abc import Callable
 
 
 _PATH_WITH_EXTENSION = re.compile(r"^(.*?\.[A-Za-z0-9]{1,8})(?:\s|$)")
+
+# The tool that reads each document type the chat commands can summarise.
+_DOCUMENT_READERS = {
+    "txt": "read_workspace_file",
+    "md": "read_workspace_file",
+    "pdf": "read_pdf",
+    "docx": "read_docx",
+    "xlsx": "read_xlsx",
+}
+
+
+def _document_reader(path: str) -> str | None:
+    suffix = path.lower().rsplit(".", 1)[-1] if "." in path else ""
+    return _DOCUMENT_READERS.get(suffix)
+
+
+def _after_prefix(text: str, prefixes: tuple[str, ...]) -> str | None:
+    """What follows the first of ``prefixes`` that ``text`` starts with, if any."""
+    lower = text.lower()
+    prefix = next((item for item in prefixes if lower.startswith(item)), None)
+    return None if prefix is None else text[len(prefix):].strip()
 
 
 def _leading_path(rest: str) -> str:
@@ -113,7 +135,7 @@ class ConversationEngine:
                 role="system",
                 content=(
                     "You are Arqen. Use normal text for conversation. "
-                    "Answer in Swedish by default unless the user asks for another language. "
+                    f"Answer in {language_name()} by default unless the user asks for another language. "
                     f"{tool_rules} "
                     "Never claim a tool ran unless a tool result is provided. "
                     "Never repeat a file's contents in your reply after a tool has read or "
@@ -123,7 +145,7 @@ class ConversationEngine:
                     "Do not invent memory entries or say that notes were saved without an explicit memory command. "
                     "When the user shares something lasting about themselves or their work, such as a "
                     "preference, a decision or a fact about a project, suggest it with propose_memory "
-                    "if that tool is available, and say it is waiting for their approval under Minne. "
+                    f"if that tool is available, and say it is waiting for their approval under {tr('Memory')}. "
                     "Do not suggest what is already in memory."
                     f"{tool_catalogue}"
                     f"{self._MEMORY_HEADING}{memory_context}"
@@ -137,12 +159,12 @@ class ConversationEngine:
         voice_command = prompt.strip().casefold()
         if voice_command in {"röstläge på", "rostläge på", "voice mode on"}:
             self.voice_enabled = True
-            return "Röstläge aktiverat."
+            return tr("Voice mode on.")
         if voice_command in {"röstläge av", "rostläge av", "voice mode off"}:
             self.voice_enabled = False
-            return "Röstläge avstängt."
+            return tr("Voice mode off.")
         if (voice_command.startswith("säg ") or voice_command.startswith("sag ")) and not self.voice_enabled:
-            return "Röstläge är avstängt. Slå på 🔊 för att använda uppläsning."
+            return tr("Voice mode is off. Turn on 🔊 to have text read aloud.")
         self._ensure_system_context(prompt)
         memory_response = self._handle_memory_command(prompt)
         if memory_response is not None:
@@ -256,7 +278,7 @@ class ConversationEngine:
                 if result.confirmation_required:
                     if self.on_confirmation_required:
                         self.on_confirmation_required(current_request.name, current_request.arguments)
-                    content = f"Jag behöver din bekräftelse innan jag kör verktyget '{current_request.name}'."
+                    content = tr("I need your confirmation before I run the tool '{name}'.", name=current_request.name)
                     self.messages.append(Message(role="tool", content=content, tool_call_id=current_request.call_id))
                     self._save_session()
                     return content
@@ -270,7 +292,7 @@ class ConversationEngine:
 
         self._save_session()
         if self._cancelled():
-            return last_content or "Avbrutet."
+            return last_content or tr("Cancelled.")
         return self._wrap_up(last_content)
 
     def _wrap_up(self, last_content: str) -> str:
@@ -282,13 +304,13 @@ class ConversationEngine:
         and has to reply in words.
         """
         if not getattr(self.provider, "supports_tools", False):
-            return last_content or "Jag kom inte vidare."
+            return last_content or tr("I could not get any further.")
         try:
             response = self._call_provider(None)
         except Exception:
-            return last_content or "Jag kom inte vidare."
+            return last_content or tr("I could not get any further.")
         if self._cancelled():
-            return response.content or last_content or "Avbrutet."
+            return response.content or last_content or tr("Cancelled.")
         self.messages.append(Message(role="assistant", content=response.content))
         self.last_response_speakable = self.voice_enabled
         self._save_session()
@@ -310,13 +332,13 @@ class ConversationEngine:
 
     def _save_session(self) -> None:
         self.session.messages = list(self.messages)
-        if self.session.title == "Ny chatt":
+        if self.session.title in UNTITLED:
             first_user = next((m.content for m in self.messages if m.role == "user"), "")
             if first_user:
                 self.session.title = first_user.strip()[:40]
         self.session_store.save(self.session)
 
-    def new_session(self, title: str = "Ny chatt") -> ChatSession:
+    def new_session(self, title: str = DEFAULT_TITLE) -> ChatSession:
         self.session = self.session_store.create(title)
         self.messages = []
         return self.session
@@ -331,127 +353,122 @@ class ConversationEngine:
         if active_window is None:
             return
 
+    # The chat commands answer in both languages, whichever the UI shows.
+    _REMEMBER = ("kom ihåg att ", "remember that ")
+    _FORGET = ("glöm att ", "forget that ")
+    _SHOW_MEMORY = {"visa mitt minne", "visa minnet", "vad minns du",
+                    "show my memory", "show memory", "what do you remember"}
+    _EXPORT = ("exportera chatten som ", "spara chatten som ", "export the chat as ", "save the chat as ")
+    _SUMMARISE_LAST = ("sammanfatta vad du nyss", "sammanfatta det du nyss",
+                       "summarize what you just", "summarise what you just")
+    _SUMMARISE_RESULT = ("sammanfatta resultat ", "summarize result ", "summarise result ")
+    _SUMMARISE = ("sammanfatta dokument ", "sammanfatta ", "summarize document ", "summarise document ",
+                  "summarize ", "summarise ")
+    _COMPARE = ("jämför ", "jamfor ", "compare ")
+
     def _handle_memory_command(self, prompt: str) -> str | None:
         text = prompt.strip()
-        lower = text.lower()
-        if lower.startswith("kom ihåg att "):
-            fact = text[len("kom ihåg att "):].strip()
+        fact = _after_prefix(text, self._REMEMBER)
+        if fact:
             self.memory_store.remember(fact)
-            return f"Jag har sparat i minnet: {fact}"
-        if lower in {"visa mitt minne", "visa minnet", "vad minns du"}:
+            return tr("Saved to memory: {fact}", fact=fact)
+        if text.lower().rstrip("?") in self._SHOW_MEMORY:
             memories = self.memory_store.list()
-            return "Mitt minne är tomt." if not memories else "Jag minns:\n- " + "\n- ".join(memories)
-        if lower.startswith("glöm att "):
-            fact = text[len("glöm att "):].strip()
-            return (
-                f"Jag har glömt: {fact}"
-                if self.memory_store.forget(fact)
-                else f"Jag hade inte sparat: {fact}"
-            )
+            if not memories:
+                return tr("My memory is empty.")
+            return tr("I remember:") + "\n- " + "\n- ".join(memories)
+        fact = _after_prefix(text, self._FORGET)
+        if fact:
+            if self.memory_store.forget(fact):
+                return tr("I have forgotten: {fact}", fact=fact)
+            return tr("I had not saved: {fact}", fact=fact)
         return None
 
     def _handle_export_command(self, prompt: str) -> str | None:
-        lower = prompt.strip().lower()
-        prefixes = ("exportera chatten som ", "spara chatten som ")
-        prefix = next((item for item in prefixes if lower.startswith(item)), None)
-        if prefix is None:
+        path = _after_prefix(prompt.strip(), self._EXPORT)
+        if not path:
             return None
-        path = prompt.strip()[len(prefix):].strip()
         if not path.lower().endswith((".txt", ".md")):
             path += ".md"
         lines = [f"# {self.session.title}", ""]
+        labels = {"user": tr("YOU"), "assistant": "ARQEN", "tool": tr("TOOL")}
         for message in self.messages:
             if message.role == "system":
                 continue
-            label = {"user": "DU", "assistant": "ARQEN", "tool": "VERKTYG"}.get(message.role, message.role.upper())
+            label = labels.get(message.role, message.role.upper())
             lines.extend([f"## {label}", message.content, ""])
         result = self.gateway.execute(
             "write_workspace_file",
             {"path": path, "content": "\n".join(lines)},
         )
         if result.confirmation_required:
-            return f"Jag behöver din bekräftelse innan jag exporterar chatten till '{path}'."
+            return tr("I need your confirmation before I export the chat to '{path}'.", path=path)
         return result.output
 
     def _handle_document_command(self, prompt: str) -> str | None:
-        lower = prompt.strip().lower()
-        if lower.startswith("sammanfatta vad du nyss") or lower.startswith("sammanfatta det du nyss"):
+        text = prompt.strip()
+        lower = text.lower()
+        language = language_name()
+        if lower.startswith(self._SUMMARISE_LAST):
             last_tool = next((message for message in reversed(self.messages) if message.role == "tool"), None)
             if last_tool is None:
-                return "Det finns inget tidigare verktygssvar att sammanfatta."
+                return tr("There is no earlier tool result to summarise.")
             messages = [
-                Message(role="system", content="Sammanfatta verktygssvaret på svenska i exakt två korta meningar."),
+                Message(role="system", content=f"Summarise the tool result in {language} in exactly two short sentences."),
                 Message(role="user", content=last_tool.content[:30_000]),
             ]
             return self.provider.respond(messages).content
-        if lower.startswith("sammanfatta resultat ") or lower.startswith("sammanfatta resultat "):
-            number = prompt.strip().split()[-1]
+        number = _after_prefix(text, self._SUMMARISE_RESULT)
+        if number is not None:
             if not number.isdigit():
-                return "Ange ett resultatnummer, exempelvis: sammanfatta resultat 3"
+                return tr("Give a result number, for example: summarize result 3")
             search_tool = self.tools.get("search_web")
             index = int(number) - 1
             results = getattr(search_tool, "last_results", []) if search_tool else []
             if not 0 <= index < len(results):
-                return "Det resultatnumret finns inte i den senaste sökningen."
+                return tr("That result number is not in the latest search.")
             fetched = self.gateway.execute("fetch_webpage", {"url": results[index][1]})
             if not fetched.ok:
                 return fetched.output
             messages = [
-                Message(role="system", content="Sammanfatta webbsidan kort på svenska. Ta med syfte, huvudpunkter och viktiga slutsatser."),
+                Message(role="system", content=f"Summarise the web page briefly in {language}. Include its purpose, main points and key conclusions."),
                 Message(role="user", content=fetched.output[:30_000]),
             ]
             return self.provider.respond(messages).content
-        if lower.startswith("jämför ") or lower.startswith("jamfor "):
-            return self._compare_documents(prompt.strip()[7:].strip())
-        prefixes = ("sammanfatta ", "sammanfatta dokument ")
-        prefix = next((item for item in prefixes if lower.startswith(item)), None)
-        if prefix is None:
-            return None
-        path = prompt.strip()[len(prefix):].strip()
-        suffix = path.lower().rsplit(".", 1)[-1] if "." in path else ""
-        tool_name = {
-            "txt": "read_workspace_file",
-            "md": "read_workspace_file",
-            "pdf": "read_pdf",
-            "docx": "read_docx",
-            "xlsx": "read_xlsx",
-        }.get(suffix)
+        specification = _after_prefix(text, self._COMPARE)
+        if specification is not None:
+            return self._compare_documents(specification)
+        path = _after_prefix(text, self._SUMMARISE)
+        # Only a document is summarised here; "summarize our plan" is a
+        # request for the model, not a file name.
+        tool_name = _document_reader(path) if path else None
         if tool_name is None:
-            return f"Jag kan ännu inte sammanfatta filtypen: {suffix or 'okänd'}."
-            result = self.gateway.execute(tool_name, {"path": path})
+            return None
+        result = self.gateway.execute(tool_name, {"path": path})
         if not result.ok:
             return result.output
         document = result.output[:30_000]
         messages = [
-            Message(role="system", content="Sammanfatta dokumentet kort på svenska. Ta med syfte, huvudpunkter och viktiga slutsatser."),
-            Message(role="user", content=f"Dokument: {path}\n\n{document}"),
+            Message(role="system", content=f"Summarise the document briefly in {language}. Include its purpose, main points and key conclusions."),
+            Message(role="user", content=f"Document: {path}\n\n{document}"),
         ]
         return self.provider.respond(messages).content
 
-    def _compare_documents(self, specification: str) -> str:
-        parts = specification.split(" med ", 1)
-        if len(parts) != 2:
-            return "Ange två filer, exempelvis: jämför ett.pdf med två.pdf"
+    def _compare_documents(self, specification: str) -> str | None:
+        parts = re.split(r"\s+(?:med|with|and|och)\s+", specification, maxsplit=1)
         paths = [part.strip() for part in parts]
+        # Anything but two documents ("compare Python and Rust") goes to the model.
+        if len(paths) != 2 or not all(_document_reader(path) for path in paths):
+            return None
         contents = []
         for path in paths:
-            suffix = path.lower().rsplit(".", 1)[-1] if "." in path else ""
-            tool_name = {
-                "txt": "read_workspace_file",
-                "md": "read_workspace_file",
-                "pdf": "read_pdf",
-                "docx": "read_docx",
-                "xlsx": "read_xlsx",
-            }.get(suffix)
-            if tool_name is None:
-                return f"Jag kan inte jämföra filtypen: {path}"
-            result = self.gateway.execute(tool_name, {"path": path})
+            result = self.gateway.execute(_document_reader(path), {"path": path})
             if not result.ok:
                 return result.output
             contents.append(result.output[:20_000])
         messages = [
-            Message(role="system", content="Jämför två dokument på svenska. Lista likheter, skillnader och saknade delar tydligt."),
-            Message(role="user", content=f"Dokument 1: {paths[0]}\n{contents[0]}\n\nDokument 2: {paths[1]}\n{contents[1]}"),
+            Message(role="system", content=f"Compare two documents in {language_name()}. List similarities, differences and missing parts clearly."),
+            Message(role="user", content=f"Document 1: {paths[0]}\n{contents[0]}\n\nDocument 2: {paths[1]}\n{contents[1]}"),
         ]
         return self.provider.respond(messages).content
         try:

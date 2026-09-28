@@ -6,6 +6,7 @@ from uuid import uuid4
 from typing import TYPE_CHECKING
 
 from arqen.mission.contracts import Task
+from arqen.ui.strings import tr
 if TYPE_CHECKING:
     from arqen.mission.runner import MissionRunner
 
@@ -69,7 +70,7 @@ class WorkflowRunner:
     def resume(self, run_id: str) -> list[str]:
         run = self.store.get_workflow_run(run_id)
         if run is None or run.status != "waiting_approval":
-            raise ValueError("Workflow-run kan inte återupptas.")
+            raise ValueError(tr("The workflow run cannot be resumed."))
         workflow = self.store.get_workflow(run.workflow_id)
         if workflow is None:
             raise ValueError("Workflow-definitionen saknas.")

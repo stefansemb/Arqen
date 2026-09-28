@@ -8,11 +8,16 @@ from typing import Any
 from arqen.core.contracts import Message
 from arqen.config import paths
 
+# A chat keeps this title until its first message names it.  Older chats
+# were created with the Swedish one.
+DEFAULT_TITLE = "New chat"
+UNTITLED = frozenset({DEFAULT_TITLE, "Ny chatt"})
+
 
 @dataclass
 class ChatSession:
     session_id: str
-    title: str = "Ny chatt"
+    title: str = DEFAULT_TITLE
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     updated_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     messages: list[Message] = field(default_factory=list)
@@ -23,7 +28,7 @@ class SessionStore:
         self.base_dir = base_dir or paths.data_dir() / "sessions"
         self.base_dir.mkdir(parents=True, exist_ok=True)
 
-    def create(self, title: str = "Ny chatt") -> ChatSession:
+    def create(self, title: str = DEFAULT_TITLE) -> ChatSession:
         return ChatSession(session_id=uuid.uuid4().hex, title=title)
 
     def save(self, session: ChatSession) -> None:
@@ -39,7 +44,7 @@ class SessionStore:
         messages = [Message(**message) for message in payload.get("messages", [])]
         return ChatSession(
             session_id=payload["session_id"],
-            title=payload.get("title", "Ny chatt"),
+            title=payload.get("title", DEFAULT_TITLE),
             created_at=payload.get("created_at", ""),
             updated_at=payload.get("updated_at", ""),
             messages=messages,

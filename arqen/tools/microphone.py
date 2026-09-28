@@ -4,6 +4,11 @@ import threading
 import os
 from typing import Callable
 
+from arqen.ui import strings
+
+# What Whisper is told to expect, per UI language.
+_WHISPER_PROMPTS = {"sv": "Svenskt tal på svenska. Arqen Desktop.", "en": "English speech. Arqen Desktop."}
+
 _whisper_model = None
 _whisper_lock = threading.Lock()
 
@@ -120,11 +125,11 @@ class MicrophoneRecorder:
             print("Whisper decoding started", flush=True)
             segments, _ = model.transcribe(
                 audio,
-                language="sv",
+                language=strings.LANGUAGE,
                 beam_size=5,
                 vad_filter=True,
                 condition_on_previous_text=False,
-                initial_prompt="Svenskt tal på svenska. Arqen Desktop.",
+                initial_prompt=_WHISPER_PROMPTS[strings.LANGUAGE],
             )
             text = " ".join(segment.text.strip() for segment in segments).strip()
             print("Whisper decoding completed", flush=True)

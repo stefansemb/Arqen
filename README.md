@@ -126,7 +126,8 @@ python -m pytest -q
   bort den.
 - All text i gränssnittet går via `tr()` i `arqen/ui/strings.py`: skriv den på
   engelska i koden och lägg den svenska översättningen i tabellen där, inte
-  direkt i `window.py`. Språket väljs i Inställningar → Språk.
+  direkt i `window.py`. Språket väljs i Inställningar → Språk; engelska är
+  standard.
 - Nya verktyg behöver en kategori och ett namn på engelska och svenska i
   `arqen/ui/tool_catalog.py`; ett test kontrollerar det.
 

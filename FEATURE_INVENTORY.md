@@ -36,7 +36,7 @@ Status uppdaterad 2026-09-28.
 | Integrationer | Google Workspace (Gmail, Kalender, Drive) | `arqen/connectors/google.py`, `arqen/tools/google_tools.py` | Medel | DONE |
 | Kommunikation | Discord och Telegram | `arqen/connectors/messaging.py`, `arqen/tools/messaging_tools.py` | Medel | DONE |
 | Integrationer | MCP-servrar | `arqen/connectors/mcp.py`, `arqen/connectors/mcp_client.py` | Medel | DONE |
-| UI | Engelskt gränssnitt (språkval) | `arqen/ui/strings.py`, `arqen/ui/tool_catalog.py` | Medel | KEEP (gränssnittet klart; motor och röst återstår) |
+| UI | Engelska och svenska (språkval, engelska standard) | `arqen/ui/strings.py`, `arqen/core/engine.py`, `arqen/tools/speech.py` | Medel | DONE |
 | Fjärrstyrning | Mobil/fjärranslutning | `arqen/api/` (lokalt API finns, mobilklient saknas) | Låg | KEEP |
 | Smart hem | Enheter och providers | Brahma Echo: `smart_home/` | Låg | OPEN |
 | Agent | Uppgifter, kö, arbetsflöden och scheman | `arqen/mission/` | Medel | DONE |
@@ -52,8 +52,8 @@ Status uppdaterad 2026-09-28.
 - Arqen ska inte vara beroende av OpenRouter, Gemini eller någon annan enskild
   molnleverantör.
 - Lokal AI-provider är grunden; molnproviders är valfria adapters.
-- Gränssnittet är mörkt med limegröna accenter, på svenska som standard och
-  med engelska som val.
+- Gränssnittet är mörkt med limegröna accenter, på engelska som standard och
+  med svenska som val.
 - Temaväxling får stöd senare, men färger hålls centralt.
 - Textflöde och säkra verktyg byggs före vision och avancerad automation.
 - Allt som inte går att ångra kräver användarens godkännande, och minnen blir

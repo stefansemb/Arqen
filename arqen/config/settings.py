@@ -3,7 +3,8 @@ import re
 from dataclasses import asdict
 from pathlib import Path
 
-from arqen.config.paths import APP_ROOT, config_dir, set_workspace_root
+from arqen.config import paths
+from arqen.config.paths import APP_ROOT, set_workspace_root
 from arqen.providers.config import ProviderConfig
 
 
@@ -17,7 +18,7 @@ def load_api_key(provider_name: str) -> str:
 
 
 def load_provider_config(path: Path | None = None) -> ProviderConfig:
-    config_path = path or config_dir() / "arqen.json"
+    config_path = path or paths.config_dir() / "arqen.json"
     if not config_path.exists():
         return DEFAULT_CONFIG
     try:
@@ -45,7 +46,7 @@ def load_provider_config(path: Path | None = None) -> ProviderConfig:
 
 def load_provider_profile(provider_name: str, path: Path | None = None) -> ProviderConfig:
     """Load a saved provider profile, including its provider-specific key."""
-    config_path = path or config_dir() / "arqen.json"
+    config_path = path or paths.config_dir() / "arqen.json"
     try:
         data = json.loads(config_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
@@ -64,7 +65,7 @@ def load_provider_profile(provider_name: str, path: Path | None = None) -> Provi
 
 
 def save_provider_config(config: ProviderConfig, path: Path | None = None) -> None:
-    config_path = path or config_dir() / "arqen.json"
+    config_path = path or paths.config_dir() / "arqen.json"
     config_path.parent.mkdir(parents=True, exist_ok=True)
     profile = {key: value for key, value in asdict(config).items() if key != "api_key"}
     profile["model"] = re.sub(r"^\[[^\]]+\]\s*", "", str(profile["model"]))
@@ -110,7 +111,7 @@ def save_provider_config(config: ProviderConfig, path: Path | None = None) -> No
 
 def load_workspace_root(path: Path | None = None) -> Path:
     """The folder the file tools work in, or the app root until one is chosen."""
-    config_path = path or config_dir() / "arqen.json"
+    config_path = path or paths.config_dir() / "arqen.json"
     try:
         data = json.loads(config_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
@@ -120,7 +121,7 @@ def load_workspace_root(path: Path | None = None) -> Path:
 
 def save_workspace_root(root: Path | str, path: Path | None = None) -> Path:
     """Store the chosen workspace and apply it to the running tools."""
-    config_path = path or config_dir() / "arqen.json"
+    config_path = path or paths.config_dir() / "arqen.json"
     config_path.parent.mkdir(parents=True, exist_ok=True)
     applied = set_workspace_root(root)
     data: dict = {}
@@ -136,7 +137,7 @@ def save_workspace_root(root: Path | str, path: Path | None = None) -> Path:
 
 def load_mission_runtime_config(path: Path | None = None) -> dict:
     """Load optional Mission Control runtime settings without enabling them."""
-    config_path = path or config_dir() / "arqen.json"
+    config_path = path or paths.config_dir() / "arqen.json"
     if not config_path.exists():
         return {}
     try:
@@ -149,7 +150,7 @@ def load_mission_runtime_config(path: Path | None = None) -> dict:
 
 def load_language(path: Path | None = None) -> str:
     """The saved UI language code, or "" when none has been chosen."""
-    config_path = path or config_dir() / "arqen.json"
+    config_path = path or paths.config_dir() / "arqen.json"
     try:
         data = json.loads(config_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
@@ -159,7 +160,7 @@ def load_language(path: Path | None = None) -> str:
 
 def save_language(code: str, path: Path | None = None) -> None:
     """Store the UI language; it takes effect at the next start."""
-    config_path = path or config_dir() / "arqen.json"
+    config_path = path or paths.config_dir() / "arqen.json"
     config_path.parent.mkdir(parents=True, exist_ok=True)
     data: dict = {}
     if config_path.exists():

@@ -29,7 +29,7 @@ def test_rejected_approval_cancels_task(tmp_path):
     approval = runner.request_approval(task.id, "publish", {})
     store.decide_approval(approval.id, "rejected")
 
-    assert runner.resume(task.id) == "Task avbruten efter avslaget."
+    assert runner.resume(task.id) == "Task cancelled after the rejection."
     assert store.get_task(task.id).status == "cancelled"
 
 

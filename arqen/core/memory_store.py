@@ -13,6 +13,8 @@ _STOPWORDS = frozenset("""
     inte jag kan med men mig min mina mitt nu när och om på sig sin som
     till under upp ut vad var vem vi vid vår är även också ska skulle vill
     the and for are you your with that this what who how was have has not
+    from into about there their them they will would can could should just
+    also but its our out all any some than then when where which why
 """.split())
 
 

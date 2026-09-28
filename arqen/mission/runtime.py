@@ -65,7 +65,7 @@ class HermesRuntime:
     def __init__(self, executable: str, working_dir: Path | str | None = None, timeout: float = 300.0,
                  health_args: tuple[str, ...] = ("--version",)) -> None:
         if not executable.strip():
-            raise ValueError("Hermes executable måste anges.")
+            raise ValueError("The Hermes executable must be given.")
         self.executable = executable
         self.working_dir = str(working_dir) if working_dir else None
         self.timeout = timeout
@@ -81,7 +81,7 @@ class HermesRuntime:
         except (OSError, subprocess.TimeoutExpired) as exc:
             return {"status": "offline", "detail": str(exc)}
         if completed.returncode != 0:
-            return {"status": "error", "detail": (completed.stderr or completed.stdout or "okänt fel").strip()}
+            return {"status": "error", "detail": (completed.stderr or completed.stdout or "unknown error").strip()}
         return {"status": "ready", "detail": (completed.stdout or completed.stderr or "ok").strip()}
 
     def run(self, prompt: str) -> str:
@@ -96,10 +96,10 @@ class HermesRuntime:
                 shell=False,
             )
         except subprocess.TimeoutExpired as exc:
-            raise RuntimeError("Hermes körning överskred timeout.") from exc
+            raise RuntimeError("The Hermes run timed out.") from exc
         except OSError as exc:
-            raise RuntimeError(f"Hermes kunde inte startas: {exc}") from exc
+            raise RuntimeError(f"Hermes could not be started: {exc}") from exc
         if completed.returncode != 0:
-            detail = (completed.stderr or completed.stdout or "okänt fel").strip()
-            raise RuntimeError(f"Hermes misslyckades ({completed.returncode}): {detail}")
+            detail = (completed.stderr or completed.stdout or "unknown error").strip()
+            raise RuntimeError(f"Hermes failed ({completed.returncode}): {detail}")
         return completed.stdout.strip()

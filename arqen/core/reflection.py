@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 
 from arqen.core.contracts import Message
 from arqen.core.memory_store import MemoryStore, looks_secret
+from arqen.ui.strings import language_name
 
 MAX_LESSONS = 5
 _TASK_LIMIT = 30
@@ -76,8 +77,8 @@ def build_messages(sources: ReflectionSources) -> list[Message]:
         "You review how a user works with their assistant Arqen and name lasting lessons worth remembering: "
         "preferences, recurring patterns, risks that keep coming back, and decisions. "
         f"Return at most {MAX_LESSONS} lessons as a JSON array of strings and nothing else, e.g. "
-        '["Användaren vill ha svar på svenska."]. '
-        "Each lesson is one short sentence in Swedish that stays true beyond a single conversation. "
+        '["The user wants short answers."]. '
+        f"Each lesson is one short sentence in {language_name()} that stays true beyond a single conversation. "
         "Skip one-off requests, anything already in memory, and never include passwords, keys or other secrets. "
         "If nothing lasting stands out, return []."
     )

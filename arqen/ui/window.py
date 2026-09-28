@@ -57,6 +57,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from arqen.core.engine import ConversationEngine
+from arqen.core.session_store import DEFAULT_TITLE, UNTITLED
 from arqen.config.settings import (
     load_provider_config,
     save_provider_config,
@@ -4130,7 +4131,7 @@ class ArqenWindow(QMainWindow):
             current_id = self.engine.session.session_id if self.engine.session else None
             for session in self.engine.session_store.list_sessions():
                 # Multi-line titles (task instructions) would break the row height.
-                title = " ".join(session.title.split()) or tr("New chat")
+                title = tr("New chat") if session.title in UNTITLED else " ".join(session.title.split()) or tr("New chat")
                 item = QListWidgetItem(title)
                 item.setData(Qt.ItemDataRole.UserRole, session.session_id)
                 item.setToolTip(title)
@@ -4146,7 +4147,7 @@ class ArqenWindow(QMainWindow):
         title, accepted = QInputDialog.getText(self, tr("New chat"), tr("Title:"))
         if not accepted:
             return
-        self.engine.new_session(title.strip() or tr("New chat"))
+        self.engine.new_session(title.strip() or DEFAULT_TITLE)
         self.output.clear()
         self.set_status(tr("READY // NEW SESSION"))
         self.refresh_sessions()

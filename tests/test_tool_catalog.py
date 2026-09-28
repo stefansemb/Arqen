@@ -8,7 +8,7 @@ from arqen.ui.tool_catalog import CATEGORIES, tool_info
 @pytest.fixture
 def language():
     yield strings.set_language
-    strings.set_language(strings.DEFAULT_LANGUAGE)
+    strings.set_language("sv")
 
 
 def test_every_builtin_tool_has_display_info():

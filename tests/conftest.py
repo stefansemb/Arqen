@@ -5,6 +5,7 @@ import pytest
 from arqen.config import paths
 from arqen.core.file_undo import FileUndoStore
 from arqen.tools import workspace_files
+from arqen.ui import strings
 
 
 @pytest.fixture(autouse=True)
@@ -28,3 +29,15 @@ def sandbox_the_workspace(monkeypatch, tmp_path):
     # read or overwrite the user's real tokens.
     monkeypatch.setattr(paths, "config_dir", lambda: tmp_path / "config")
     monkeypatch.setattr(workspace_files, "UNDO", FileUndoStore(tmp_path / "undo"))
+
+
+@pytest.fixture(autouse=True)
+def swedish_ui():
+    """Most tests check the Swedish texts, so they run in Swedish.
+
+    English is the default for new installations; tests of English set it
+    themselves.
+    """
+    strings.set_language("sv")
+    yield
+    strings.set_language("sv")

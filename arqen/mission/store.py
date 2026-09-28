@@ -244,7 +244,7 @@ class MissionStore:
 
     def decide_approval(self, approval_id: str, status: str) -> None:
         if status not in {"approved", "rejected"}:
-            raise ValueError("Approval måste godkännas eller avslås.")
+            raise ValueError("An approval must be approved or rejected.")
         with self._connect() as db:
             db.execute("UPDATE approvals SET status = ? WHERE id = ?", (status, approval_id))
 
@@ -272,7 +272,7 @@ class MissionStore:
                 continue
             claimed = datetime.fromisoformat(task.claimed_at)
             if (current - claimed).total_seconds() > max_age_seconds:
-                self.update_task(task.id, "failed", "Task återställdes efter timeout.")
+                self.update_task(task.id, "failed", "Task recovered after a timeout.")
                 changed += 1
         return changed
 

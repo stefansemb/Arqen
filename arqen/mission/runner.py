@@ -3,6 +3,7 @@ from collections.abc import Callable
 from arqen.mission.contracts import Approval, Event, Task
 from arqen.mission.runtime import AgentRuntime, ApprovalRequired, ArqenRuntime
 from arqen.mission.store import MissionStore
+from arqen.ui.strings import tr
 
 
 class MissionRunner:
@@ -38,7 +39,7 @@ class MissionRunner:
                                          lambda action, payload: (_ for _ in ()).throw(ApprovalRequired(action, payload)))
                 except ApprovalRequired as approval:
                     self.request_approval(task.id, approval.action, approval.payload)
-                    return "Task väntar på godkännande."
+                    return "Task is waiting for approval."
             else:
                 result = runtime.run(task.prompt)
         except Exception as exc:
@@ -70,14 +71,14 @@ class MissionRunner:
             raise KeyError(f"Unknown mission task: {task_id}")
         approvals = [item for item in self.store.list_approvals() if item.task_id == task_id]
         if task.status != "waiting_approval" or not approvals:
-            raise ValueError("Task väntar inte på ett approval.")
+            raise ValueError(tr("The task is not waiting for an approval."))
         latest = approvals[0]
         if latest.status == "rejected":
             self.store.update_task(task_id, "cancelled")
             self._event(task, "approval_rejected", latest.action)
-            return "Task avbruten efter avslaget."
+            return "Task cancelled after the rejection."
         if latest.status != "approved":
-            raise ValueError("Approval väntar fortfarande på beslut.")
+            raise ValueError(tr("The approval is still waiting for a decision."))
         self._event(task, "approval_approved", latest.action)
         self.store.update_task(task_id, "queued")
         return self.run(task_id)
@@ -90,14 +91,14 @@ class MissionRunner:
             return self.runtime
         agent = self.store.get_agent(task.agent_id)
         if agent is None:
-            raise ValueError(f"Agenten '{task.agent_id}' finns inte.")
+            raise ValueError(tr("The agent '{name}' does not exist.", name=task.agent_id))
         if not agent.enabled:
-            raise ValueError(f"Agenten '{agent.name}' är inaktiv.")
+            raise ValueError(tr("The agent '{name}' is inactive.", name=agent.name))
         runtime = self.runtimes.get(agent.id)
         if runtime is None and agent.runtime == "arqen":
             runtime = self.runtime
         if runtime is None:
-            raise ValueError(f"Ingen runtime är konfigurerad för agenten '{agent.name}'.")
+            raise ValueError(tr("No runtime is configured for the agent '{name}'.", name=agent.name))
         return runtime
 
     def runtime_status(self, agent_id: str) -> dict[str, object]:

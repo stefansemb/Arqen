@@ -149,7 +149,7 @@ class ArqenRequestHandler(BaseHTTPRequestHandler):
             self._require_auth()
             payload = self._read_json()
             if path == "/api/v1/sessions":
-                result = self.server.application.create_session(str(payload.get("title", "Ny chatt")))
+                result = self.server.application.create_session(str(payload.get("title", "New chat")))
                 self._send_json(HTTPStatus.CREATED, {"data": self._as_json(result)})
                 return
             if path == "/api/v1/mission/tasks":
