@@ -115,8 +115,7 @@ byggd 2026-09-26) håller när sajter säger ifrån:
 - Källgränser: högst 12 000 tecken per hämtad sida; alla svar har adresser.
 
 Provat mot riktiga tjänster: Hacker News, GitHub, release notes, DuckDuckGo och
-Reddit (via RSS) svarar. Scout måste ges de två nya verktygen (Anslutningar →
-Scout → Webb → GE ALLA).
+Reddit (via RSS) svarar. Scout har båda de nya verktygen.
 
 ## Nya prioriterade spår
 
