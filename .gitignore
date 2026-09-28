@@ -16,3 +16,4 @@ data/mission-sessions/
 data/tool-audit.jsonl
 backups/
 data/*.log
+data/generated/
