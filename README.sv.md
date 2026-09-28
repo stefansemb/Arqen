@@ -109,7 +109,8 @@ Du behöver inte installera Python själv: installationsprogrammet sköter det.
    och klicka på **Source code (zip)** under **Assets**.
 2. Gå till mappen **Hämtade filer**, högerklicka på zip-filen och välj
    **Extrahera alla…**. Välj mappen **Dokument** och klicka på **Extrahera**.
-   Du får en mapp som heter **Arqen-1.0.0**; där bor Arqen.
+   Du får en mapp som heter **Arqen-** och versionsnumret, till exempel
+   **Arqen-1.0.1**; där bor Arqen.
 3. Öppna den mappen och dubbelklicka på **`install.cmd`**.
    - *"Datorn skyddades av Windows"*: klicka på **Mer information** och sedan
      **Kör ändå**.

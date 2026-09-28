@@ -111,7 +111,8 @@ You don't need to install Python yourself: the installer takes care of it.
    and, under **Assets**, click **Source code (zip)**.
 2. Go to your **Downloads** folder, right-click the zip and choose
    **Extract All…**. Choose your **Documents** folder and click **Extract**.
-   You get a folder called **Arqen-1.0.0**; this is where Arqen lives.
+   You get a folder named **Arqen-** and the version number, for example
+   **Arqen-1.0.1**; this is where Arqen lives.
 3. Open that folder and double-click **`install.cmd`**.
    - *"Windows protected your PC"*: click **More info**, then **Run anyway**.
    - *"Do you want to run this file?"*: click **Run**.

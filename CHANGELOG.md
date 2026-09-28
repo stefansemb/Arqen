@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.1 (2026-09-28)
+
+- A smaller download: six images made with Arqen had been included in the
+  repository by mistake. They are gone, and the download shrinks from almost
+  10 MB to under 1 MB. Nothing else changes.
+- The install guide names the folder the zip unpacks to for any version.
+
+Already on 1.0.0? Nothing to do: the images are not used, and your own
+generated images stay in `data/generated`.
+
 ## 1.0.0 (2026-09-28)
 
 The first public release of Arqen: a local AI assistant for Windows with a
