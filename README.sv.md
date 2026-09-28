@@ -154,3 +154,8 @@ Chatt, röst, Kontrollrum, Memory 2.0, Tool Gateway (med kostnad och
 nyckelhantering) och anslutningarna (GitHub, Google, Discord, Telegram, MCP)
 fungerar lokalt. Kvar i närtid: bekräftelseflöden i API:t och en mobilklient.
 Se HANDOVER för detaljer.
+
+## Licens
+
+[MIT](LICENSE) © 2026 Stefan Semb. Du får använda, ändra och dela Arqen,
+även kommersiellt, så länge upphovsrättsraden och licensen följer med.

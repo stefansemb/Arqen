@@ -169,3 +169,8 @@ notes are in [HANDOVER.md](HANDOVER.md) (in Swedish).
 > The repository is called Arqen-Desktop for historical reasons. The old
 > desktop version is no longer developed; its last release is kept as the tag
 > `arqen-desktop-legacy`.
+
+## License
+
+[MIT](LICENSE) © 2026 Stefan Semb. You may use, change and share Arqen,
+also commercially, as long as the copyright notice and license come along.
