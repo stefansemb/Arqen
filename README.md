@@ -1,5 +1,10 @@
 # Arqen
 
+[![Release](https://img.shields.io/github/v/release/stefansemb/Arqen?color=b7ff18&labelColor=101214)](https://github.com/stefansemb/Arqen/releases/latest)
+[![License: MIT](https://img.shields.io/badge/license-MIT-b7ff18?labelColor=101214)](LICENSE)
+[![Windows 10 and 11](https://img.shields.io/badge/Windows-10%20%7C%2011-b7ff18?labelColor=101214)](#getting-started)
+[![Discussions](https://img.shields.io/github/discussions/stefansemb/Arqen?color=b7ff18&labelColor=101214)](https://github.com/stefansemb/Arqen/discussions)
+
 **A local AI assistant for Windows, with a Mission Control for agents, tasks
 and workflows.**
 
@@ -262,6 +267,10 @@ Chat, voice, Mission Control, memory with suggestions and reflection, the
 Tool Gateway and the connections (GitHub, Google, Discord, Telegram, MCP) work
 locally, and on your phone through Tailscale. The working
 notes are in [HANDOVER.md](HANDOVER.md) (in Swedish).
+
+Questions, ideas or something to show? Start a thread in
+[Discussions](https://github.com/stefansemb/Arqen/discussions); bugs go in
+[Issues](https://github.com/stefansemb/Arqen/issues).
 
 > Arqen grew out of an earlier app, Arqen Desktop, which is no longer
 > developed; its last release is kept as the tag `arqen-desktop-legacy`.

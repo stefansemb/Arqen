@@ -1,5 +1,10 @@
 # Arqen
 
+[![Release](https://img.shields.io/github/v/release/stefansemb/Arqen?color=b7ff18&labelColor=101214)](https://github.com/stefansemb/Arqen/releases/latest)
+[![License: MIT](https://img.shields.io/badge/license-MIT-b7ff18?labelColor=101214)](LICENSE)
+[![Windows 10 and 11](https://img.shields.io/badge/Windows-10%20%7C%2011-b7ff18?labelColor=101214)](#kom-igång)
+[![Discussions](https://img.shields.io/github/discussions/stefansemb/Arqen?color=b7ff18&labelColor=101214)](https://github.com/stefansemb/Arqen/discussions)
+
 Arqen är en lokal AI-assistent för Windows, byggd med PyQt6, med ett
 **Kontrollrum** för agenter, uppgifter och arbetsflöden. Gränssnittet och rösten
 finns på engelska (standard) och svenska; välj under Inställningar → Språk.
@@ -268,6 +273,10 @@ Chatt, röst, Kontrollrum, Memory 2.0, Tool Gateway (med kostnad och
 nyckelhantering) och anslutningarna (GitHub, Google, Discord, Telegram, MCP)
 fungerar lokalt, och i telefonen via Tailscale.
 Se HANDOVER för detaljer.
+
+Frågor, idéer eller något att visa upp? Starta en tråd i
+[Discussions](https://github.com/stefansemb/Arqen/discussions); fel rapporteras i
+[Issues](https://github.com/stefansemb/Arqen/issues).
 
 ## Licens
 
