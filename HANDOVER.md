@@ -421,7 +421,7 @@ från telefonen att krascha. Versionen står i `arqen/__init__.py`, visas i
 inställningsfönstrets titel och i `/api/v1/health`. Release notes i
 `CHANGELOG.md`; releaserna på GitHub är taggarna `v1.0.0` och `v1.0.1`
 (samma innehåll, utan de genererade bilderna: nedladdningen gick från knappt
-10 MB till under 1 MB).
+10 MB till cirka 1 MB).
 
 ## Mobilstöd (klart 2026-09-28)
 
