@@ -475,3 +475,10 @@ Arqen tar funktioner och idéer som inspiration från:
 Använd projektet som referens vid framtida utveckling när det gäller funktioner,
 arbetsflöden och UI-idéer. Anpassa alltid lösningarna till Arqens egen arkitektur
 och design.
+
+## Idé: projektlista med färdiggrad (2026-10-05, inte påbörjad)
+Kommer från en kommentar i en community för Claude Code-användare: en enkel tavla med alla projekt, och man avslutar ett innan nästa påbörjas.
+- En lista över användarens projekt (Arqen AI Studio, Arqen Motion, Arqen Mission Control och så vidare) med ungefär hur långt varje projekt kommit, i procent.
+- Förslag på färdiggrad: varje projekt har en kort lista med delmål (till exempel "MVP", "Första video uppladdad", "Release v1"). Procenten räknas ut från hur många som är avbockade och kan skrivas över för hand. Nya idéer parkeras under "Senare" och räknas inte in.
+- Andan: hjälper mot att för många idéer tar över. Ett projekt markeras som aktivt, de andra väntar. Håll funktionen enkel.
+- Nästa steg: se hur Mission Control är byggt och planera var listan ska ligga.
