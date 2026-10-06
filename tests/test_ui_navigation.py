@@ -23,11 +23,11 @@ def test_mission_control_navigation_is_complete():
         profile_name=config.profile_name,
     )
     expected = {
-        "Dashboard", "Chat", "Mission Control", "Tasks", "Workflows",
+        "Dashboard", "Projects", "Chat", "Mission Control", "Tasks", "Workflows",
             "Schedules", "Agents", "Activity", "Memory", "Tools", "Content", "Connections", "Settings",
     }
     assert set(window.navigation_buttons) == expected
-    assert window.navigation_stack.count() == 12
+    assert window.navigation_stack.count() == 13
     window.close()
     app.quit()
 

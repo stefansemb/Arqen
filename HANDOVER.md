@@ -476,12 +476,15 @@ Använd projektet som referens vid framtida utveckling när det gäller funktion
 arbetsflöden och UI-idéer. Anpassa alltid lösningarna till Arqens egen arkitektur
 och design.
 
-## Idé: projektlista med färdiggrad (2026-10-05, inte påbörjad)
+## Projektlista med färdiggrad (idé 2026-10-05, byggd 2026-10-06)
 Kommer från en kommentar i en community för Claude Code-användare: en enkel tavla med alla projekt, och man avslutar ett innan nästa påbörjas.
 - En lista över användarens projekt (Arqen AI Studio, Arqen Motion, Arqen Mission Control och så vidare) med ungefär hur långt varje projekt kommit, i procent.
 - Förslag på färdiggrad: varje projekt har en kort lista med delmål (till exempel "MVP", "Första video uppladdad", "Release v1"). Procenten räknas ut från hur många som är avbockade och kan skrivas över för hand. Nya idéer parkeras under "Senare" och räknas inte in.
 - Andan: hjälper mot att för många idéer tar över. Ett projekt markeras som aktivt, de andra väntar. Håll funktionen enkel.
-- Nästa steg: se hur Mission Control är byggt och planera var listan ska ligga.
+- **Byggt 2026-10-06:** sidan Projekt (under Översikt) och listan på dashboarden, under XP-panelen. Data i `data/projects.json` (gitignorerad, går att redigera för hand och läses om när filen ändras), logik i `arqen/core/projects.py`.
+  - Procent = andel avbockade delmål, eller satt för hand. "Senare" räknas inte, och "Gör till delmål" flyttar in en idé i planen.
+  - "Aktivt projekt" byggdes inte, eftersom alla projekt används och förbättras parallellt.
+  - Ett delmål som bockas av får `done_at`. Arqen AI Studio ger det 40 XP och räknar det som leverans för streaken. Delmål som lades in redan avbockade, med `done_at: null`, ger ingen XP.
 
 ## XP-panel på dashboarden (2026-10-06)
 - Överst på dashboarden visas nivå, XP-bar, streak, senaste achievement och XP per app för alla Arqen-appar.

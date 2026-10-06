@@ -17,3 +17,5 @@ data/tool-audit.jsonl
 backups/
 data/*.log
 data/generated/
+data/projects.json
+data/projects.tmp

@@ -30,6 +30,7 @@ from PyQt6.QtWidgets import (
     QFileDialog,
     QDialogButtonBox,
     QProgressBar,
+    QSpinBox,
 )
 from PyQt6.QtCore import QEvent, QObject, QProcess, QSettings, QThread, QTimer, Qt, QUrl, QPoint, QPointF, QRectF, QSize, pyqtSignal, pyqtSlot
 from PyQt6.QtGui import (
@@ -87,6 +88,7 @@ from arqen.ui.theme import CyberpunkGreenTheme, VoicePalette, load_voice_palette
 from arqen.core.provider_metrics import ProviderMetrics
 from arqen.core.memory_store import MemoryStore
 from arqen.core import studio_xp
+from arqen.core.projects import ProjectBoard
 from arqen.tools.speech import set_audio_level_callback
 from arqen.tools.microphone import MicrophoneRecorder
 from arqen.mission import Agent, MissionRunner, MissionStore, Schedule, Task, Workflow, WorkflowRunner, WorkflowStep
@@ -848,7 +850,7 @@ class ArqenWindow(QMainWindow):
         navigation_layout.addWidget(QLabel("ARQEN", objectName="title"))
         navigation_layout.addWidget(QLabel(tr("MISSION CONTROL")))
         navigation_layout.addWidget(QLabel(tr("OVERVIEW"), objectName="navSection"))
-        for label, icon in (("Dashboard", "⌂"), ("Chat", "◌"), ("Mission Control", "◈")):
+        for label, icon in (("Dashboard", "⌂"), ("Projects", "▦"), ("Chat", "◌"), ("Mission Control", "◈")):
             self._add_navigation_button(navigation_layout, label, icon)
         navigation_layout.addWidget(QLabel(tr("SYSTEM"), objectName="navSection"))
         for label, icon in (("Agents", "♙"), ("Activity", "≋"), ("Memory", "▤"), ("Tools", "⚿"), ("Connections", "⧉")):
@@ -961,12 +963,14 @@ class ArqenWindow(QMainWindow):
         dashboard_layout.addWidget(QLabel(tr("DASHBOARD"), objectName="title"))
         dashboard_layout.addWidget(QLabel(tr("Mission Control // system overview"), objectName="status"))
         dashboard_layout.addWidget(self._build_xp_panel())
+        dashboard_layout.addWidget(QLabel(tr("PROJECTS"), objectName="sectionLabel"))
+        dashboard_layout.addWidget(self._build_dashboard_projects())
         cards = QGridLayout()
         cards.setSpacing(10)
         self.dashboard_cards: dict[str, QLabel] = {}
         for index, (key, label) in enumerate((("agents", "AGENTS"), ("tasks", "ACTIVE TASKS"), ("approvals", "APPROVALS"), ("workflows", "WORKFLOW RUNS"))):
             card = QFrame(objectName="panel")
-            card.setMinimumHeight(92)
+            card.setMinimumHeight(72)
             card.setStyleSheet(
                 "QFrame#panel { background: #171d21; border: 1px solid #30383a; border-radius: 8px; }"
             )
@@ -1028,6 +1032,7 @@ class ArqenWindow(QMainWindow):
             page_layout.addWidget(QLabel(tr("This view will be expanded in the next UI step.")))
             page_layout.addStretch(1)
             self.navigation_stack.addWidget(page)
+        self._add_projects_view()
         main_column = QWidget()
         main_layout = QVBoxLayout(main_column)
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -2611,6 +2616,266 @@ class ArqenWindow(QMainWindow):
         if hasattr(self, "tools_stack"):
             self._refresh_tools_view()
 
+    # ---- Projects: milestones and how far each project has come ----
+
+    _PROJECT_BAR_STYLE = (
+        "QProgressBar { background: #0f1416; border: 1px solid #30383a; border-radius: 4px; max-height: 8px; }"
+        "QProgressBar::chunk { background: #c7ff2f; border-radius: 3px; }"
+    )
+
+    def _build_dashboard_projects(self) -> QFrame:
+        self.project_board = ProjectBoard(paths.data_dir() / "projects.json")
+        self._projects_dirty = True
+        panel = QFrame(objectName="panel")
+        panel.setStyleSheet(
+            "QFrame#panel { background: #171d21; border: 1px solid #30383a; border-radius: 8px; }"
+            "QFrame#panel QLabel { background: transparent; }"
+            + self._PROJECT_BAR_STYLE
+        )
+        self.dashboard_projects = QGridLayout(panel)
+        self.dashboard_projects.setContentsMargins(14, 12, 14, 12)
+        self.dashboard_projects.setHorizontalSpacing(14)
+        self.dashboard_projects.setVerticalSpacing(8)
+        self.dashboard_projects.setColumnStretch(1, 1)
+        return panel
+
+    def _project_bar(self, percent: int) -> QProgressBar:
+        bar = QProgressBar()
+        bar.setRange(0, 100)
+        bar.setValue(percent)
+        bar.setTextVisible(False)
+        return bar
+
+    def _refresh_dashboard_projects(self) -> None:
+        if not hasattr(self, "dashboard_projects"):
+            return
+        if not (self.project_board.reload() or self._projects_dirty):
+            return
+        self._projects_dirty = False
+        grid = self.dashboard_projects
+        while grid.count():
+            widget = grid.takeAt(0).widget()
+            if widget is not None:
+                widget.deleteLater()
+        if not self.project_board.projects:
+            grid.addWidget(QLabel(tr("No projects yet. Add them under Projects."), objectName="status"), 0, 0, 1, 4)
+            return
+        for row, project in enumerate(self.project_board.projects):
+            name = QLabel(project.name)
+            name.setStyleSheet("font-weight: 700;")
+            grid.addWidget(name, row, 0)
+            grid.addWidget(self._project_bar(project.percent), row, 1)
+            percent = QLabel(f"{project.percent}%")
+            percent.setStyleSheet("color: #c7ff2f; font-weight: 700;")
+            grid.addWidget(percent, row, 2)
+            upcoming = project.next_milestone
+            text = tr("Next: {milestone}", milestone=upcoming) if upcoming else tr("All milestones done")
+            grid.addWidget(QLabel(text, objectName="status"), row, 3)
+
+    def _add_projects_view(self) -> None:
+        page = QWidget()
+        page.setStyleSheet(self._PROJECT_BAR_STYLE)
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(18, 18, 18, 18)
+        layout.setSpacing(10)
+        layout.addWidget(QLabel(tr("PROJECTS"), objectName="title"))
+        layout.addWidget(QLabel(tr("Milestones and how far each project has come"), objectName="status"))
+        body = QHBoxLayout()
+        body.setSpacing(14)
+
+        left = QVBoxLayout()
+        self.projects_list = QListWidget()
+        self.projects_list.setFixedWidth(280)
+        self.projects_list.currentRowChanged.connect(self._show_project)
+        left.addWidget(self.projects_list, 1)
+        buttons = QHBoxLayout()
+        add_project = QPushButton(tr("+ PROJECT"))
+        self._style_page_action(add_project, primary=True)
+        add_project.clicked.connect(self._new_project)
+        remove_project = QPushButton(tr("REMOVE"))
+        self._style_page_action(remove_project)
+        remove_project.clicked.connect(self._remove_project)
+        buttons.addWidget(add_project)
+        buttons.addWidget(remove_project)
+        left.addLayout(buttons)
+        body.addLayout(left)
+
+        self.project_detail = QWidget()
+        right = QVBoxLayout(self.project_detail)
+        right.setContentsMargins(0, 0, 0, 0)
+        self.project_name = QLabel(objectName="title")
+        right.addWidget(self.project_name)
+        progress_row = QHBoxLayout()
+        self.project_bar = self._project_bar(0)
+        self.project_percent = QLabel()
+        self.project_percent.setStyleSheet("color: #c7ff2f; font-weight: 700;")
+        self.project_manual = QCheckBox(tr("Set by hand"))
+        self.project_manual.toggled.connect(self._toggle_manual_percent)
+        self.project_manual_value = QSpinBox()
+        self.project_manual_value.setRange(0, 100)
+        self.project_manual_value.setSuffix(" %")
+        self.project_manual_value.valueChanged.connect(self._set_manual_percent)
+        progress_row.addWidget(self.project_bar, 1)
+        progress_row.addWidget(self.project_percent)
+        progress_row.addSpacing(12)
+        progress_row.addWidget(self.project_manual)
+        progress_row.addWidget(self.project_manual_value)
+        right.addLayout(progress_row)
+
+        right.addWidget(QLabel(tr("MILESTONES"), objectName="sectionLabel"))
+        self.milestone_list = QListWidget()
+        self.milestone_list.itemChanged.connect(self._milestone_toggled)
+        right.addWidget(self.milestone_list, 2)
+        self.milestone_input = QLineEdit()
+        self.milestone_input.setPlaceholderText(tr("New milestone"))
+        self.milestone_input.returnPressed.connect(self._add_milestone)
+        right.addLayout(self._project_input_row(self.milestone_input, (
+            (tr("ADD"), self._add_milestone, True),
+            (tr("REMOVE"), self._remove_milestone, False),
+        )))
+
+        right.addWidget(QLabel(tr("LATER (not counted)"), objectName="sectionLabel"))
+        self.later_list = QListWidget()
+        right.addWidget(self.later_list, 1)
+        self.later_input = QLineEdit()
+        self.later_input.setPlaceholderText(tr("Park an idea"))
+        self.later_input.returnPressed.connect(self._add_later)
+        right.addLayout(self._project_input_row(self.later_input, (
+            (tr("PARK"), self._add_later, True),
+            (tr("MAKE MILESTONE"), self._promote_later, False),
+            (tr("REMOVE"), self._remove_later, False),
+        )))
+        body.addWidget(self.project_detail, 1)
+        layout.addLayout(body, 1)
+        self.projects_page_index = self.navigation_stack.addWidget(page)
+        self._refresh_projects_view()
+
+    def _project_input_row(self, field: QLineEdit, actions) -> QHBoxLayout:
+        row = QHBoxLayout()
+        row.addWidget(field, 1)
+        for label, handler, primary in actions:
+            button = QPushButton(label)
+            self._style_page_action(button, primary=primary)
+            button.clicked.connect(handler)
+            row.addWidget(button)
+        return row
+
+    def _current_project(self):
+        item = self.projects_list.currentItem() if hasattr(self, "projects_list") else None
+        return self.project_board.get(item.data(Qt.ItemDataRole.UserRole)) if item else None
+
+    def _projects_changed(self, keep: str | None = None) -> None:
+        self._projects_dirty = True
+        self._refresh_projects_view(keep)
+        self._refresh_dashboard_projects()
+
+    def _refresh_projects_view(self, keep: str | None = None) -> None:
+        if not hasattr(self, "projects_list"):
+            return
+        current = keep or getattr(self._current_project(), "id", None)
+        self.project_board.reload()
+        self.projects_list.blockSignals(True)
+        self.projects_list.clear()
+        for project in self.project_board.projects:
+            item = QListWidgetItem(f"{project.name}  ·  {project.percent}%")
+            item.setData(Qt.ItemDataRole.UserRole, project.id)
+            self.projects_list.addItem(item)
+        ids = [p.id for p in self.project_board.projects]
+        self.projects_list.setCurrentRow(ids.index(current) if current in ids else (0 if ids else -1))
+        self.projects_list.blockSignals(False)
+        self._show_project()
+
+    def _show_project(self, *_args) -> None:
+        project = self._current_project()
+        self.project_detail.setVisible(project is not None)
+        if project is None:
+            return
+        for widget in (self.milestone_list, self.project_manual, self.project_manual_value):
+            widget.blockSignals(True)
+        self.project_name.setText(project.name.upper())
+        self.project_bar.setValue(project.percent)
+        self.project_percent.setText(f"{project.percent}%")
+        self.project_manual.setChecked(project.manual_percent is not None)
+        self.project_manual_value.setEnabled(project.manual_percent is not None)
+        self.project_manual_value.setValue(project.percent)
+        self.milestone_list.clear()
+        for milestone in project.milestones:
+            item = QListWidgetItem(milestone.text)
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+            item.setCheckState(Qt.CheckState.Checked if milestone.done else Qt.CheckState.Unchecked)
+            if milestone.done_at:
+                item.setToolTip(tr("Done {date}", date=milestone.done_at[:10]))
+            self.milestone_list.addItem(item)
+        self.later_list.clear()
+        self.later_list.addItems(project.later)
+        for widget in (self.milestone_list, self.project_manual, self.project_manual_value):
+            widget.blockSignals(False)
+
+    def _new_project(self) -> None:
+        name, ok = QInputDialog.getText(self, tr("New project"), tr("Project name:"))
+        if ok and name.strip():
+            self._projects_changed(self.project_board.add_project(name).id)
+
+    def _remove_project(self) -> None:
+        project = self._current_project()
+        if project is None:
+            return
+        answer = QMessageBox.question(self, tr("Remove project"), tr("Remove {name} and its milestones?", name=project.name))
+        if answer == QMessageBox.StandardButton.Yes:
+            self.project_board.remove_project(project.id)
+            self._projects_changed()
+
+    def _milestone_toggled(self, item: QListWidgetItem) -> None:
+        project = self._current_project()
+        if project is None:
+            return
+        self.project_board.set_done(project.id, self.milestone_list.row(item), item.checkState() == Qt.CheckState.Checked)
+        self._projects_changed(project.id)
+
+    def _add_milestone(self) -> None:
+        project, text = self._current_project(), self.milestone_input.text().strip()
+        if project and text:
+            self.project_board.add_milestone(project.id, text)
+            self.milestone_input.clear()
+            self._projects_changed(project.id)
+
+    def _remove_milestone(self) -> None:
+        project, row = self._current_project(), self.milestone_list.currentRow()
+        if project and row >= 0:
+            self.project_board.remove_milestone(project.id, row)
+            self._projects_changed(project.id)
+
+    def _add_later(self) -> None:
+        project, text = self._current_project(), self.later_input.text().strip()
+        if project and text:
+            self.project_board.add_later(project.id, text)
+            self.later_input.clear()
+            self._projects_changed(project.id)
+
+    def _promote_later(self) -> None:
+        project, row = self._current_project(), self.later_list.currentRow()
+        if project and row >= 0:
+            self.project_board.promote_later(project.id, row)
+            self._projects_changed(project.id)
+
+    def _remove_later(self) -> None:
+        project, row = self._current_project(), self.later_list.currentRow()
+        if project and row >= 0:
+            self.project_board.remove_later(project.id, row)
+            self._projects_changed(project.id)
+
+    def _toggle_manual_percent(self, on: bool) -> None:
+        project = self._current_project()
+        if project:
+            self.project_board.set_manual_percent(project.id, self.project_manual_value.value() if on else None)
+            self._projects_changed(project.id)
+
+    def _set_manual_percent(self, value: int) -> None:
+        project = self._current_project()
+        if project and project.manual_percent is not None:
+            self.project_board.set_manual_percent(project.id, value)
+            self._projects_changed(project.id)
+
     def _add_content_view(self) -> None:
         page = QWidget()
         page_layout = QVBoxLayout(page)
@@ -2657,7 +2922,7 @@ class ArqenWindow(QMainWindow):
                 "QPushButton { background: transparent; color: #8d969d; border: none; "
                 "text-align: left; padding: 7px 8px; border-radius: 5px; }"
             )
-        pages = {"Dashboard": 0, "Chat": 1, "Tasks": 2, "Workflows": 3, "Schedules": 4, "Agents": 5, "Activity": 6, "Memory": 7, "Tools": 8, "Content": 9, "Connections": 10, "Mission Control": getattr(self, "mission_page_index", 0)}
+        pages = {"Dashboard": 0, "Chat": 1, "Tasks": 2, "Workflows": 3, "Schedules": 4, "Agents": 5, "Activity": 6, "Memory": 7, "Tools": 8, "Content": 9, "Connections": 10, "Mission Control": getattr(self, "mission_page_index", 0), "Projects": getattr(self, "projects_page_index", 0)}
         if name in pages and hasattr(self, "navigation_stack"):
             self.navigation_stack.setCurrentIndex(pages[name])
             if name == "Memory":
@@ -2668,6 +2933,8 @@ class ArqenWindow(QMainWindow):
                 self._refresh_content_view()
             elif name == "Connections":
                 self._refresh_connections_view()
+            elif name == "Projects":
+                self._refresh_projects_view()
 
     def _create_mission_dock(self) -> None:
         """Create the first functional Mission Control surface."""
@@ -2934,6 +3201,7 @@ class ArqenWindow(QMainWindow):
         if not hasattr(self, "dashboard_cards"):
             return
         self.refresh_xp_panel()
+        self._refresh_dashboard_projects()
         self.dashboard_cards["agents"].setText(str(len(self.mission_store.list_agents())))
         active = sum(1 for task in self.mission_store.list_tasks() if task.status in {"queued", "running", "waiting_approval"})
         self.dashboard_cards["tasks"].setText(str(active))
