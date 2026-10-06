@@ -310,7 +310,7 @@ Faser:
 
 ## Teststatus
 
-257 tester, alla gröna. Kör efter ändringar:
+266 tester, alla gröna (2026-10-06). Kör efter ändringar:
 
 ```powershell
 python -m compileall -q arqen
@@ -481,11 +481,20 @@ Kommer från en kommentar i en community för Claude Code-användare: en enkel t
 - En lista över användarens projekt (Arqen AI Studio, Arqen Motion, Arqen Mission Control och så vidare) med ungefär hur långt varje projekt kommit, i procent.
 - Förslag på färdiggrad: varje projekt har en kort lista med delmål (till exempel "MVP", "Första video uppladdad", "Release v1"). Procenten räknas ut från hur många som är avbockade och kan skrivas över för hand. Nya idéer parkeras under "Senare" och räknas inte in.
 - Andan: hjälper mot att för många idéer tar över. Ett projekt markeras som aktivt, de andra väntar. Håll funktionen enkel.
-- **Byggt 2026-10-06:** sidan Projekt (under Översikt) och listan på dashboarden, under XP-panelen. Data i `data/projects.json` (gitignorerad, går att redigera för hand och läses om när filen ändras), logik i `arqen/core/projects.py`.
+- **Byggt 2026-10-06:** sidan Projects (under Overview) och listan på dashboarden, under XP-panelen. Data i `data/projects.json` (gitignorerad, går att redigera för hand och läses om när filen ändras), logik i `arqen/core/projects.py`.
   - Procent = andel avbockade delmål, eller satt för hand. "Senare" räknas inte, och "Gör till delmål" flyttar in en idé i planen.
   - "Aktivt projekt" byggdes inte, eftersom alla projekt används och förbättras parallellt.
+  - Allt i Mission Control ska vara på engelska, även delmålstexterna. Svenska översättningar läggs ändå in i `strings.py` för nya UI-texter, så att språkvalet fortsätter fungera.
+  - Fem projekt är inlagda: Arqen AI Studio, Arqen Mission Control, Arqen Thumbnail, Arqen Motion och samidatools.com. Delmålen bygger på respektive HANDOVER.
   - Ett delmål som bockas av får `done_at`. Arqen AI Studio ger det 40 XP och räknar det som leverans för streaken. Delmål som lades in redan avbockade, med `done_at: null`, ger ingen XP.
 
 ## XP-panel på dashboarden (2026-10-06)
 - Överst på dashboarden visas nivå, XP-bar, streak, senaste achievement och XP per app för alla Arqen-appar.
 - Arqen AI Studio räknar fram allt och sparar det i `Arqen AI Studio/data/xp.json`. Mission Control läser bara filen (`arqen/core/studio_xp.py`, läses om när filen ändras), så panelen är dold om Studio saknas. Sökväg: syskonmappen eller `ARQEN_STUDIO_DIR`.
+
+## Dashboarden (2026-10-06)
+- Ordning uppifrån: rubrik med en liten **Open Arqen Chat**-knapp till höger, XP-panelen, projektlistan och de fyra systemrutorna (Agents, Active tasks, Approvals, Workflow runs, nu 72 px höga).
+- "Latest activity" är borttagen från dashboarden. Hela loggen finns på sidan Activity, och översikten under Mission Control visar fortfarande de senaste händelserna.
+
+## Webbplatsen samidatools.com (2026-10-06)
+- Kortet heter nu **Arqen Mission Control** (tidigare bara "Arqen"), med knappen "Visit Mission Control" till arqen.samidatools.com. Sidfoten och sidans beskrivning använder samma namn.
