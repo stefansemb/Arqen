@@ -501,5 +501,5 @@ Kommer från en kommentar i en community för Claude Code-användare: en enkel t
 
 ## Vercel och webbplatsen arqen.samidatools.com (2026-10-06)
 - Mission Control förblir en app för datorn. Tanken på en webbapp är släppt.
-- Ett Vercel-projekt ("arqen") kopplades till repot 2026-09-28 och försöker bygga vid varje push. Det har aldrig lyckats, eftersom repot inte har någon webbapp. Det används inte och kan tas bort i Vercel. Felmejlen "Production deployment failed" efter en push betyder inget för appen.
+- Ett Vercel-projekt ("arqen") kopplades till repot 2026-09-28 och försökte bygga vid varje push. Det lyckades aldrig, eftersom repot inte har någon webbapp. **Frånkopplat från GitHub 2026-10-06**, så pushar startar inga byggen och ger inga felmejl längre. Själva Vercel-projektet finns kvar men används inte.
 - arqen.samidatools.com ligger på Netlify och är ett test av en 3D-webbsida som ska göras om vid ett annat tillfälle. Idén ligger under "Later" i projektlistan.
