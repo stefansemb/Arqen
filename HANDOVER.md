@@ -510,5 +510,6 @@ Kommer från en kommentar i en community för Claude Code-användare: en enkel t
 - Källan är Häckens publika Google-kalender (länkad från bkhacken.se/kalender). Den hämtas högst var tredje timme. Herrmatcher är märkta "(h)" och dammatcher "(d)". Länken i Häckens nyhetsartikel (iCloud) är död.
 - Inställningarna i `data/match_reminders.json`: `enabled`, `label`, `calendar_url`, `filter` och `hours_before`. Vad som skickats sparas i `data/match_reminders_state.json`, och fel loggas i `data/match_reminders.log`. Alla tre är gitignorerade.
 - Telegram skickas via kopplingen Telegram i Mission Control (`telegram_send`).
+- Bara herrmatcher ska ge påminnelser (filtret "(h)", användarens önskemål). Kontrollerat 2026-10-06: alla 17 kommande matcher är märkta (h) eller (d), 8 herr- och 9 dammatcher. Ett testmeddelande till Telegram kom fram samma dag.
 - Koden är allmän: vilket lag som helst med en .ics-kalender fungerar. Den kan bli grunden till ett verktyg på samidatools.com, som då skulle behöva en datakälla för alla lag, till exempel TheSportsDB för cirka 9 USD/månad.
 - Teststatus: 270 tester, alla gröna.
