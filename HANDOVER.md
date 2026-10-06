@@ -498,3 +498,8 @@ Kommer från en kommentar i en community för Claude Code-användare: en enkel t
 
 ## Webbplatsen samidatools.com (2026-10-06)
 - Kortet heter nu **Arqen Mission Control** (tidigare bara "Arqen"), med knappen "Visit Mission Control" till arqen.samidatools.com. Sidfoten och sidans beskrivning använder samma namn.
+
+## Vercel och webbplatsen arqen.samidatools.com (2026-10-06)
+- Mission Control förblir en app för datorn. Tanken på en webbapp är släppt.
+- Ett Vercel-projekt ("arqen") kopplades till repot 2026-09-28 och försöker bygga vid varje push. Det har aldrig lyckats, eftersom repot inte har någon webbapp. Det används inte och kan tas bort i Vercel. Felmejlen "Production deployment failed" efter en push betyder inget för appen.
+- arqen.samidatools.com ligger på Netlify och är ett test av en 3D-webbsida som ska göras om vid ett annat tillfälle. Idén ligger under "Later" i projektlistan.
