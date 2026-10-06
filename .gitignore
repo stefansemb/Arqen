@@ -19,3 +19,7 @@ data/*.log
 data/generated/
 data/projects.json
 data/projects.tmp
+data/match_reminders.json
+data/match_reminders_state.json
+data/match_reminders.ics
+data/match_reminders.log

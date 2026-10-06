@@ -310,7 +310,7 @@ Faser:
 
 ## Teststatus
 
-266 tester, alla gröna (2026-10-06). Kör efter ändringar:
+270 tester, alla gröna (2026-10-06). Kör efter ändringar:
 
 ```powershell
 python -m compileall -q arqen
@@ -503,3 +503,12 @@ Kommer från en kommentar i en community för Claude Code-användare: en enkel t
 - Mission Control förblir en app för datorn. Tanken på en webbapp är släppt.
 - Ett Vercel-projekt ("arqen") kopplades till repot 2026-09-28 och försökte bygga vid varje push. Det lyckades aldrig, eftersom repot inte har någon webbapp. **Frånkopplat från GitHub 2026-10-06**, så pushar startar inga byggen och ger inga felmejl längre. Själva Vercel-projektet finns kvar men används inte.
 - arqen.samidatools.com ligger på Netlify och är ett test av en 3D-webbsida som ska göras om vid ett annat tillfälle. Idén ligger under "Later" i projektlistan.
+
+## Matchpåminnelser (2026-10-06)
+- Telegram-påminnelser före BK Häckens herrmatcher: en per timme de sista 6 timmarna före avspark. Ingen AI används. Logiken ligger i `arqen/mission/match_reminders.py`.
+- Körs av en schemalagd uppgift i Windows, **"Arqen match reminders"**, var 5:e minut: `pythonw -m arqen.mission.match_reminders` med repot som arbetsmapp. Påminnelserna kommer därför även när appen är stängd, men bara när datorn är på och användaren inloggad. Uppgiften finns i Schemaläggaren och pausas eller tas bort där.
+- Källan är Häckens publika Google-kalender (länkad från bkhacken.se/kalender). Den hämtas högst var tredje timme. Herrmatcher är märkta "(h)" och dammatcher "(d)". Länken i Häckens nyhetsartikel (iCloud) är död.
+- Inställningarna i `data/match_reminders.json`: `enabled`, `label`, `calendar_url`, `filter` och `hours_before`. Vad som skickats sparas i `data/match_reminders_state.json`, och fel loggas i `data/match_reminders.log`. Alla tre är gitignorerade.
+- Telegram skickas via kopplingen Telegram i Mission Control (`telegram_send`).
+- Koden är allmän: vilket lag som helst med en .ics-kalender fungerar. Den kan bli grunden till ett verktyg på samidatools.com, som då skulle behöva en datakälla för alla lag, till exempel TheSportsDB för cirka 9 USD/månad.
+- Teststatus: 270 tester, alla gröna.
