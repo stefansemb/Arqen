@@ -29,6 +29,7 @@ from PyQt6.QtWidgets import (
     QScrollArea,
     QFileDialog,
     QDialogButtonBox,
+    QProgressBar,
 )
 from PyQt6.QtCore import QEvent, QObject, QProcess, QSettings, QThread, QTimer, Qt, QUrl, QPoint, QPointF, QRectF, QSize, pyqtSignal, pyqtSlot
 from PyQt6.QtGui import (
@@ -85,6 +86,7 @@ from arqen.connectors import mcp as mcp_servers
 from arqen.ui.theme import CyberpunkGreenTheme, VoicePalette, load_voice_palette
 from arqen.core.provider_metrics import ProviderMetrics
 from arqen.core.memory_store import MemoryStore
+from arqen.core import studio_xp
 from arqen.tools.speech import set_audio_level_callback
 from arqen.tools.microphone import MicrophoneRecorder
 from arqen.mission import Agent, MissionRunner, MissionStore, Schedule, Task, Workflow, WorkflowRunner, WorkflowStep
@@ -958,6 +960,7 @@ class ArqenWindow(QMainWindow):
         dashboard_layout.setSpacing(12)
         dashboard_layout.addWidget(QLabel(tr("DASHBOARD"), objectName="title"))
         dashboard_layout.addWidget(QLabel(tr("Mission Control // system overview"), objectName="status"))
+        dashboard_layout.addWidget(self._build_xp_panel())
         cards = QGridLayout()
         cards.setSpacing(10)
         self.dashboard_cards: dict[str, QLabel] = {}
@@ -2856,9 +2859,81 @@ class ArqenWindow(QMainWindow):
             tools=create_builtin_registry(),
         )
 
+    def _build_xp_panel(self) -> QFrame:
+        """Level, XP bar, streak and latest achievement across the Arqen apps (worked out by Studio)."""
+        self.studio_xp = studio_xp.StudioXp()
+        panel = QFrame(objectName="panel")
+        panel.setStyleSheet(
+            "QFrame#panel { background: #171d21; border: 1px solid #30383a; border-radius: 8px; }"
+            "QFrame#panel QLabel { background: transparent; }"
+            "QProgressBar { background: #0f1416; border: 1px solid #30383a; border-radius: 5px; max-height: 10px; }"
+            "QProgressBar::chunk { background: #c7ff2f; border-radius: 4px; }"
+        )
+        layout = QVBoxLayout(panel)
+        layout.setContentsMargins(14, 12, 14, 12)
+        layout.setSpacing(8)
+        head = QHBoxLayout()
+        self.xp_level = QLabel()
+        self.xp_level.setStyleSheet("color: #c7ff2f; font-size: 26px; font-weight: 700;")
+        self.xp_title = QLabel()
+        self.xp_title.setStyleSheet("font-weight: 700; letter-spacing: 1px;")
+        self.xp_streak = QLabel()
+        self.xp_badge = QLabel()
+        self.xp_badge.setStyleSheet("color: #c4cec9;")
+        head.addWidget(self.xp_level)
+        head.addSpacing(10)
+        head.addWidget(self.xp_title)
+        head.addStretch(1)
+        head.addWidget(self.xp_streak)
+        head.addSpacing(16)
+        head.addWidget(self.xp_badge)
+        layout.addLayout(head)
+        self.xp_bar = QProgressBar()
+        self.xp_bar.setRange(0, 1000)
+        self.xp_bar.setTextVisible(False)
+        layout.addWidget(self.xp_bar)
+        self.xp_text = QLabel(objectName="status")
+        self.xp_text.setWordWrap(True)
+        layout.addWidget(self.xp_text)
+        self.xp_panel = panel
+        panel.hide()
+        return panel
+
+    def refresh_xp_panel(self) -> None:
+        if not hasattr(self, "xp_panel"):
+            return
+        data = self.studio_xp.load()
+        if not data:
+            self.xp_panel.hide()
+            return
+        try:
+            num = lambda n: f"{n:,}".replace(",", " ")
+            self.xp_level.setText(tr("LVL {level}", level=data["level"]))
+            self.xp_title.setText(data["title"].upper())
+            weeks = data["streakWeeks"]
+            self.xp_streak.setText(f"🔥 {tr('{n} weeks', n=weeks) if weeks != 1 else tr('1 week')}")
+            self.xp_streak.setStyleSheet("font-weight: 700;" if weeks else "color: #5d6866;")
+            badge = studio_xp.latest_achievement(data)
+            self.xp_badge.setText(f"🏆 {badge['name']}" if badge else "")
+            self.xp_badge.setToolTip(badge["description"] if badge else "")
+            self.xp_bar.setValue(round(studio_xp.progress(data) * 1000))
+            labels = data.get("appLabels", {})
+            apps = sorted(data["perApp"].items(), key=lambda kv: -kv[1])
+            per_app = "  ·  ".join(f"{labels.get(app, app).replace('Arqen ', '')} {num(xp)}" for app, xp in apps)
+            to_next = num(data["nextLevelAt"] - data["total"])
+            self.xp_text.setText(
+                tr("{total} XP  //  {next} to level {level}", total=num(data["total"]), next=to_next, level=data["level"] + 1)
+                + f"\n{per_app}"
+            )
+            self.xp_panel.show()
+        except (KeyError, TypeError):
+            # A snapshot from a newer or older Studio: hide rather than show half of it.
+            self.xp_panel.hide()
+
     def refresh_dashboard(self) -> None:
         if not hasattr(self, "dashboard_cards"):
             return
+        self.refresh_xp_panel()
         self.dashboard_cards["agents"].setText(str(len(self.mission_store.list_agents())))
         active = sum(1 for task in self.mission_store.list_tasks() if task.status in {"queued", "running", "waiting_approval"})
         self.dashboard_cards["tasks"].setText(str(active))

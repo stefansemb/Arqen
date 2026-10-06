@@ -482,3 +482,7 @@ Kommer från en kommentar i en community för Claude Code-användare: en enkel t
 - Förslag på färdiggrad: varje projekt har en kort lista med delmål (till exempel "MVP", "Första video uppladdad", "Release v1"). Procenten räknas ut från hur många som är avbockade och kan skrivas över för hand. Nya idéer parkeras under "Senare" och räknas inte in.
 - Andan: hjälper mot att för många idéer tar över. Ett projekt markeras som aktivt, de andra väntar. Håll funktionen enkel.
 - Nästa steg: se hur Mission Control är byggt och planera var listan ska ligga.
+
+## XP-panel på dashboarden (2026-10-06)
+- Överst på dashboarden visas nivå, XP-bar, streak, senaste achievement och XP per app för alla Arqen-appar.
+- Arqen AI Studio räknar fram allt och sparar det i `Arqen AI Studio/data/xp.json`. Mission Control läser bara filen (`arqen/core/studio_xp.py`, läses om när filen ändras), så panelen är dold om Studio saknas. Sökväg: syskonmappen eller `ARQEN_STUDIO_DIR`.
