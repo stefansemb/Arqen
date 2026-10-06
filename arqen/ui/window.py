@@ -960,8 +960,17 @@ class ArqenWindow(QMainWindow):
         dashboard_layout = QVBoxLayout(dashboard)
         dashboard_layout.setContentsMargins(18, 18, 18, 18)
         dashboard_layout.setSpacing(12)
-        dashboard_layout.addWidget(QLabel(tr("DASHBOARD"), objectName="title"))
-        dashboard_layout.addWidget(QLabel(tr("Mission Control // system overview"), objectName="status"))
+        header = QHBoxLayout()
+        titles = QVBoxLayout()
+        titles.addWidget(QLabel(tr("DASHBOARD"), objectName="title"))
+        titles.addWidget(QLabel(tr("Mission Control // system overview"), objectName="status"))
+        header.addLayout(titles)
+        header.addStretch(1)
+        open_chat = QPushButton(tr("OPEN ARQEN CHAT"))
+        self._style_page_action(open_chat, primary=True)
+        open_chat.clicked.connect(lambda: self._select_navigation("Chat"))
+        header.addWidget(open_chat, 0, Qt.AlignmentFlag.AlignTop)
+        dashboard_layout.addLayout(header)
         dashboard_layout.addWidget(self._build_xp_panel())
         dashboard_layout.addWidget(QLabel(tr("PROJECTS"), objectName="sectionLabel"))
         dashboard_layout.addWidget(self._build_dashboard_projects())
@@ -983,19 +992,8 @@ class ArqenWindow(QMainWindow):
             self.dashboard_cards[key] = value
             cards.addWidget(card, index // 2, index % 2)
         dashboard_layout.addLayout(cards)
-        dashboard_layout.addWidget(QLabel(tr("LATEST ACTIVITY"), objectName="sectionLabel"))
-        self.dashboard_activity = QListWidget()
-        self.dashboard_activity.setSpacing(4)
-        self.dashboard_activity.setStyleSheet(
-            "QListWidget { background: #171d21; border: 1px solid #30383a; border-radius: 8px; padding: 6px; }"
-            "QListWidget::item { padding: 7px; border-bottom: 1px solid #252d30; color: #c4cec9; }"
-            "QListWidget::item:last { border-bottom: none; }"
-        )
-        dashboard_layout.addWidget(self.dashboard_activity, 1)
-        open_chat = QPushButton(tr("OPEN ARQEN CHAT"))
-        self._style_page_action(open_chat, primary=True)
-        open_chat.clicked.connect(lambda: self._select_navigation("Chat"))
-        dashboard_layout.addWidget(open_chat)
+        # The full activity log lives on the Activity page.
+        dashboard_layout.addStretch(1)
         self.navigation_stack.addWidget(dashboard)
         self.navigation_stack.addWidget(content)
         for label in ("Tasks", "Workflows", "Schedules", "Agents", "Activity", "Memory", "Tools", "Content", "Connections"):
@@ -3215,14 +3213,10 @@ class ArqenWindow(QMainWindow):
             self.mission_overview_cards["approvals"].setText(str(len(self.mission_store.list_approvals("pending"))))
             self.mission_overview_cards["workflows"].setText(str(active_workflows))
             self.mission_overview_cards["attention"].setText(str(attention))
-        self.dashboard_activity.clear()
         if hasattr(self, "mission_overview_activity"):
             self.mission_overview_activity.clear()
-        for event in self.mission_store.list_all_events(8):
-            text = f"[{status_label(event.kind)}] {tr(event.message)}"
-            self.dashboard_activity.addItem(text)
-            if hasattr(self, "mission_overview_activity"):
-                self.mission_overview_activity.addItem(text)
+            for event in self.mission_store.list_all_events(8):
+                self.mission_overview_activity.addItem(f"[{status_label(event.kind)}] {tr(event.message)}")
         if hasattr(self, "mission_overview_activity") and not self.mission_overview_activity.count():
             self.mission_overview_activity.addItem(tr("No recent activity"))
 
